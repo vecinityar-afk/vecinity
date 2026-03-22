@@ -547,9 +547,17 @@
             document.getElementById('my-pub-list').innerHTML = myPubs.map(pubCardHTML).join('');
         }
 
-        function populateBarrioSelects() {
-            const options = '<option value="">Elegí un barrio...</option>' + BARRIOS.map(b => `<option value="${b}">${b}</option>`).join('');
-            document.getElementById('reg-barrio').innerHTML = options;
+      function populateBarrioSelects() {
+    // Generamos las opciones
+    const options = '<option value="" disabled selected>Elegí tu barrio...</option>' + 
+                    BARRIOS.sort().map(b => `<option value="${b}">${b}</option>`).join('');
+    
+    // IMPORTANTE: Chequear que estos IDs existan en tu HTML
+    const regSelect = document.getElementById('reg-barrio'); // El del registro
+    const pubSelect = document.getElementById('pub-barrio-select'); // El de publicación
+    
+    if (regSelect) regSelect.innerHTML = options;
+    if (pubSelect) pubSelect.innerHTML = options;
         }
 
         function showModal(id, tab) { 
