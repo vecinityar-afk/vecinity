@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
     <style>
         :root {
             --emerald: #047857; --emerald-light: #059669; --emerald-dark: #065f46;
@@ -33,7 +32,6 @@
 </head>
 <body class="h-full">
     <div id="toast-container"></div>
-
     <div class="app-wrapper" id="app">
         <header class="w-full bg-white border-b border-gray-100 sticky top-0 z-40 backdrop-blur-md">
             <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -68,7 +66,6 @@
                     <button onclick="showPage('page-global-search')" class="bg-white/20 hover:bg-white/30 px-6 py-2 rounded-full font-semibold transition-all">Ver Marketplace Global</button>
                 </div>
             </section>
-            
             <section class="max-w-6xl mx-auto px-4 py-16">
                 <h2 class="font-serif text-2xl md:text-3xl font-bold text-center mb-10">Categorías</h2>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-6" id="home-categories"></div>
@@ -84,14 +81,14 @@
             <div class="bg-emerald-900 text-white py-16 px-6">
                 <div class="max-w-6xl mx-auto">
                     <h2 id="barrio-title" class="font-serif text-4xl font-bold mb-4"></h2>
-                    <button onclick="showModal('modal-publish')" class="bg-emerald-600 px-6 py-2 rounded-full font-bold text-sm hover:bg-emerald-500 transition-colors">Publicar en mi barrio</button>
+                    <button onclick="showModal('modal-publish')" class="bg-emerald-600 px-6 py-2 rounded-full font-bold text-sm hover:bg-emerald-500 transition-colors">Publicar en este barrio</button>
                 </div>
             </div>
             <div id="barrio-marketplace" class="max-w-6xl mx-auto px-6 py-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </div>
 
         <div id="page-portal" class="hidden min-h-screen bg-gray-50 p-6">
-            <div id="perfil-info" class="max-w-xl mx-auto bg-white p-8 rounded-3xl shadow-sm mb-8"></div>
+            <div id="perfil-info" class="max-w-xl mx-auto bg-white p-8 rounded-3xl shadow-sm mb-8 text-center"></div>
             <h3 class="max-w-6xl mx-auto font-serif text-2xl font-bold mb-6 text-center">Mis Publicaciones</h3>
             <div id="my-pub-list" class="max-w-6xl mx-auto grid sm:grid-cols-2 gap-6"></div>
         </div>
@@ -142,7 +139,7 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN - PEGA TU URL DE GOOGLE SHEETS ACÁ
+        // CONFIGURACIÓN - PEGA TU URL DE GOOGLE ACÁ
         const SCRIPT_URL = 'TU_URL_DE_APPS_SCRIPT_AQUI'; 
 
         const BARRIOS = ["Acacias Blancas", "Alamos", "Altos de Pilar", "Aranjuez", "Ayres de Pilar", "Beverly Hills", "Boca Ratón", "Brisas de Pilar", "Campos de Álvarez", "Cardales Village", "Castaños de Pilar", "Chacras de Murray", "Club de Campo Los Lagartos", "Complejo Pilar", "Cruz del Sur", "Del Viso", "El Canton", "El Casco de Pilar", "El Establo (Haras del Pilar)", "El Jagüel", "Estancias del Pilar", "Fincas de Pilar", "Golfer's Country Club", "Greenlands", "Haras del Pilar - El Establo", "Haras del Pilar - La Caballeriza", "Haras del Pilar - La Pradera", "Highland Park", "La Delfina", "La Escondida", "La Lomada", "La Lonja", "La Peregrina", "La Reserva", "Lagos de Pilar", "Las Brisas", "Las Calandrias", "Las Liebres", "Los Pilares", "Mapuche", "Martindale", "Mayling", "Miraflores", "Nordelta", "Palmas de Pilar", "Pilar del Este - San Alfonso", "Pilar del Este - Santa Guadalupe", "Pilar del Este - San Ramiro", "Pilar del Lago", "Pilará", "San Sebastián", "Santa Bárbara", "Tortugas", "Villa Rosa"];
@@ -155,16 +152,9 @@
             lucide.createIcons();
             populateBarrioSelect();
             renderHomeCategories();
-            
             const saved = localStorage.getItem('vecinity_user');
-            if(saved) { 
-                currentUser = JSON.parse(saved); 
-                updateAuthUI(); 
-            }
-            
-            if(SCRIPT_URL && SCRIPT_URL.includes('exec')) {
-                await loadData();
-            }
+            if(saved) { currentUser = JSON.parse(saved); updateAuthUI(); }
+            if(SCRIPT_URL && SCRIPT_URL.includes('exec')) { await loadData(); }
         }
 
         async function loadData() {
@@ -176,8 +166,7 @@
         }
 
         function populateBarrioSelect() {
-            const options = '<option value="" disabled selected>Elegí tu barrio...</option>' + 
-                            BARRIOS.sort().map(b => `<option value="${b}">${b}</option>`).join('');
+            const options = '<option value="" disabled selected>Elegí tu barrio...</option>' + BARRIOS.sort().map(b => `<option value="${b}">${b}</option>`).join('');
             document.getElementById('reg-barrio').innerHTML = options;
         }
 
@@ -185,41 +174,11 @@
             const waMsg = `Hola! Vi tu publicación "${p.pub_title || p.titulo}" en Vecinity...`;
             const waLink = `https://wa.me/54${p.whatsapp || p.pub_user_whatsapp}?text=${encodeURIComponent(waMsg)}`;
             const autor = p.nick || p.pub_user_nick || "Vecino";
-
-            return `
-                <div class="pub-card fade-in">
-                    <div class="p-6">
-                        <span class="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase mb-4 inline-block">
-                            ${p.barrio || p.pub_barrio}
-                        </span>
-                        <h4 class="font-serif text-2xl font-bold mb-2 text-gray-900">${p.titulo || p.pub_title}</h4>
-                        <p class="text-gray-500 text-sm mb-6">${p.descripcion || p.pub_description}</p>
-                        <div class="flex items-center gap-2 mb-6 p-2 bg-gray-50 rounded-xl">
-                            <div class="w-7 h-7 bg-emerald-700 rounded-full flex items-center justify-center text-white text-[10px] font-bold">
-                                ${autor[0].toUpperCase()}
-                            </div>
-                            <span class="text-xs font-bold text-gray-500">@${autor}</span>
-                        </div>
-                        <div class="flex justify-between items-center mt-auto border-t pt-5">
-                            <span class="text-2xl font-black text-emerald-800">$${p.precio || p.pub_price || '0'}</span>
-                            <a href="${waLink}" target="_blank" class="w-12 h-12 rounded-2xl bg-emerald-700 flex items-center justify-center text-white shadow-lg hover:bg-emerald-800 transition-all hover:scale-105">
-                                <i data-lucide="message-circle" class="w-6 h-6"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>`;
+            return `<div class="pub-card fade-in"><div class="p-6"><span class="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase mb-4 inline-block">${p.barrio || p.pub_barrio}</span><h4 class="font-serif text-2xl font-bold mb-2">${p.titulo || p.pub_title}</h4><p class="text-gray-500 text-sm mb-6">${p.descripcion || p.pub_description}</p><div class="flex items-center gap-2 mb-6 p-2 bg-gray-50 rounded-xl"><div class="w-7 h-7 bg-emerald-700 rounded-full flex items-center justify-center text-white text-[10px] font-bold">${autor[0].toUpperCase()}</div><span class="text-xs font-bold text-gray-500">@${autor}</span></div><div class="flex justify-between items-center mt-auto border-t pt-5"><span class="text-2xl font-black text-emerald-800">$${p.precio || p.pub_price || '0'}</span><a href="${waLink}" target="_blank" class="w-12 h-12 rounded-2xl bg-emerald-700 flex items-center justify-center text-white shadow-lg hover:bg-emerald-800 transition-all hover:scale-105"><i data-lucide="message-circle" class="w-6 h-6"></i></a></div></div></div>`;
         }
 
         async function handleUserRegister() {
-            const data = { 
-                type: 'user', 
-                nombre: document.getElementById('reg-nombre').value, 
-                nick: document.getElementById('reg-nick').value, 
-                email: document.getElementById('reg-email').value, 
-                barrio: document.getElementById('reg-barrio').value, 
-                whatsapp: document.getElementById('reg-whatsapp').value, 
-                password: document.getElementById('reg-pass').value 
-            };
+            const data = { type: 'user', nombre: document.getElementById('reg-nombre').value, nick: document.getElementById('reg-nick').value, email: document.getElementById('reg-email').value, barrio: document.getElementById('reg-barrio').value, whatsapp: document.getElementById('reg-whatsapp').value, password: document.getElementById('reg-pass').value };
             await sendToGoogle(data);
             toast("¡Registro exitoso! Ya podés ingresar.");
             closeModal('modal-auth');
@@ -229,44 +188,20 @@
         async function handlePublish(e) {
             e.preventDefault();
             if(!currentUser) return toast("Iniciá sesión para publicar", "error");
-            const data = { 
-                type: 'publication', 
-                pub_title: document.getElementById('pub-title').value, 
-                pub_description: document.getElementById('pub-desc').value, 
-                pub_price: document.getElementById('pub-price').value, 
-                pub_category: document.getElementById('pub-category').value, 
-                pub_barrio: currentUser.barrio, 
-                pub_user_nick: currentUser.nick, 
-                pub_user_whatsapp: currentUser.whatsapp, 
-                pub_scope: document.querySelector('input[name="pub-scope"]:checked').value 
-            };
+            const data = { type: 'publication', pub_title: document.getElementById('pub-title').value, pub_description: document.getElementById('pub-desc').value, pub_price: document.getElementById('pub-price').value, pub_category: document.getElementById('pub-category').value, pub_barrio: currentUser.barrio, pub_user_nick: currentUser.nick, pub_user_whatsapp: currentUser.whatsapp, pub_scope: document.querySelector('input[name="pub-scope"]:checked').value };
             await sendToGoogle(data);
             toast("¡Publicado con éxito!");
             location.reload();
         }
 
-        async function sendToGoogle(o) { 
-            try { 
-                await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(o) }); 
-                return true; 
-            } catch(e){ return false; } 
-        }
+        async function sendToGoogle(o) { try { await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(o) }); return true; } catch(e){ return false; } }
 
         function handleLogin(e) {
             e.preventDefault();
             const u = document.getElementById('login-email').value.trim();
             const p = document.getElementById('login-pass').value;
             const found = allData.find(x => (x.email === u || x.nick === u) && x.password === p);
-            if(found) { 
-                currentUser = found; 
-                localStorage.setItem('vecinity_user', JSON.stringify(found)); 
-                closeModal('modal-auth'); 
-                updateAuthUI(); 
-                renderCurrentView(); 
-                toast("Hola " + found.nombre); 
-            } else { 
-                toast("Usuario o clave incorrectos", "error"); 
-            }
+            if(found) { currentUser = found; localStorage.setItem('vecinity_user', JSON.stringify(found)); closeModal('modal-auth'); updateAuthUI(); renderCurrentView(); toast("Hola " + found.nombre); } else { toast("Usuario o clave incorrectos", "error"); }
         }
 
         function filterBarrios(q) {
@@ -277,11 +212,7 @@
             res.classList.remove('hidden');
         }
 
-        function enterBarrio(b) {
-            currentBarrio = b; 
-            showPage('page-barrio');
-        }
-
+        function enterBarrio(b) { currentBarrio = b; showPage('page-barrio'); }
         function renderCurrentView() {
             if(!document.getElementById('page-barrio').classList.contains('hidden')) renderBarrioPortal();
             if(!document.getElementById('page-portal').classList.contains('hidden')) renderUserPortal();
@@ -302,59 +233,24 @@
         }
 
         function renderUserPortal() {
-            document.getElementById('perfil-info').innerHTML = `
-                <div class="w-20 h-20 bg-emerald-700 rounded-full flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">${currentUser.nombre[0]}</div>
-                <h3 class="text-3xl font-bold">${currentUser.nombre}</h3>
-                <p class="text-emerald-700 font-bold">@${currentUser.nick} · ${currentUser.barrio}</p>
-                <p class="text-gray-400 text-sm mt-2">${currentUser.email}</p>
-            `;
+            document.getElementById('perfil-info').innerHTML = `<div class="w-20 h-20 bg-emerald-700 rounded-full flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">${currentUser.nombre[0]}</div><h3 class="text-3xl font-bold">${currentUser.nombre}</h3><p class="text-emerald-700 font-bold">@${currentUser.nick} · ${currentUser.barrio}</p>`;
             const myPubs = allData.filter(p => p.pub_user_nick === currentUser.nick);
             document.getElementById('my-pub-list').innerHTML = myPubs.map(pubCardHTML).join('');
         }
 
         function renderHomeCategories() {
             const cats = [{i:'🏠',l:'Hogar'},{i:'🍔',l:'Comida'},{i:'📚',l:'Escolares'},{i:'🔧',l:'Servicios'}];
-            document.getElementById('home-categories').innerHTML = cats.map(c => `
-                <div class="bg-white p-8 rounded-[32px] border border-gray-100 text-center cursor-pointer hover:shadow-lg transition" onclick="showPage('page-global-search')">
-                    <span class="text-4xl block mb-2">${c.i}</span>
-                    <p class="font-bold text-gray-800 text-sm">${c.l}</p>
-                </div>`).join('');
+            document.getElementById('home-categories').innerHTML = cats.map(c => `<div class="bg-white p-8 rounded-[32px] border border-gray-100 text-center cursor-pointer hover:shadow-lg transition" onclick="showPage('page-global-search')"><span class="text-4xl block mb-2">${c.i}</span><p class="font-bold text-gray-800 text-sm">${c.l}</p></div>`).join('');
         }
 
-        function updateAuthUI() { 
-            if(currentUser) { 
-                document.getElementById('auth-buttons').classList.add('hidden'); 
-                document.getElementById('user-menu').classList.remove('hidden'); 
-                document.getElementById('user-menu').classList.add('flex'); 
-                document.getElementById('user-greeting').textContent = "Hola, " + currentUser.nombre; 
-            } 
-        }
-
-        function showPage(id) { 
-            ['page-home','page-barrio','page-portal','page-global-search'].forEach(p => document.getElementById(p).classList.add('hidden')); 
-            document.getElementById(id).classList.remove('hidden'); 
-            window.scrollTo(0,0); 
-            renderCurrentView(); 
-        }
-
+        function updateAuthUI() { if(currentUser) { document.getElementById('auth-buttons').classList.add('hidden'); document.getElementById('user-menu').classList.remove('hidden'); document.getElementById('user-menu').classList.add('flex'); document.getElementById('user-greeting').textContent = "Hola, " + currentUser.nombre; } }
+        function showPage(id) { ['page-home','page-barrio','page-portal','page-global-search'].forEach(p => document.getElementById(p).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); window.scrollTo(0,0); renderCurrentView(); }
         function goHome() { showPage('page-home'); }
         function showModal(id, tab) { document.getElementById(id).classList.remove('hidden'); if(tab) switchAuthTab(tab); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-        function switchAuthTab(t) { 
-            document.getElementById('form-login').classList.toggle('hidden', t==='register'); 
-            document.getElementById('form-register').classList.toggle('hidden', t==='login'); 
-            document.getElementById('auth-tab-login').classList.toggle('active', t==='login'); 
-            document.getElementById('auth-tab-register').classList.toggle('active', t==='register'); 
-        }
-        function toast(m, t="success") { 
-            const d = document.createElement('div'); 
-            d.className = `toast toast-${t}`; 
-            d.innerText = m; 
-            document.getElementById('toast-container').appendChild(d); 
-            setTimeout(() => d.remove(), 4000); 
-        }
+        function switchAuthTab(t) { document.getElementById('form-login').classList.toggle('hidden', t==='register'); document.getElementById('form-register').classList.toggle('hidden', t==='login'); document.getElementById('auth-tab-login').classList.toggle('active', t==='login'); document.getElementById('auth-tab-register').classList.toggle('active', t==='register'); }
+        function toast(m, t="success") { const d = document.createElement('div'); d.className = `toast toast-${t}`; d.innerText = m; document.getElementById('toast-container').appendChild(d); setTimeout(() => d.remove(), 4000); }
         function logoutUser() { localStorage.removeItem('vecinity_user'); location.reload(); }
-        
         window.onload = init;
     </script>
 </body>
