@@ -655,13 +655,25 @@ function handleLogin(e) {
     const u = document.getElementById('login-email').value.trim();
     const p = document.getElementById('login-pass').value.trim();
 
-    // Login de emergencia por si el Excel falla
+    console.log("Intentando ingresar con:", u); // Esto te ayuda a ver si el botón responde
+
+    // --- MODO DE EMERGENCIA (Para probar si el código funciona) ---
     if(u === "admin" && p === "1234") {
-        currentUser = { nombre: "Admin", nick: "admin", barrio: "Pilar" };
-        updateAuthUI(); closeModal('modal-auth'); toast("Modo Admin"); return;
+        currentUser = { nombre: "Admin", nick: "admin", barrio: "Pilar", whatsapp: "549" };
+        localStorage.setItem('vecinity_user', JSON.stringify(currentUser));
+        updateAuthUI(); 
+        closeModal('modal-auth'); 
+        renderCurrentView();
+        toast("Ingreso Admin Exitoso");
+        return;
     }
 
-    // CAMBIO CLAVE: Agregamos .toString() para evitar errores de tipo de dato
+    // --- BÚSQUEDA EN BASE DE DATOS ---
+    if (!allData || allData.length === 0) {
+        toast("Todavía cargando datos... espera un segundo", "error");
+        return;
+    }
+
     const found = allData.find(x => 
         x.type === 'user' && 
         (x.email === u || x.nick === u) && 
@@ -674,7 +686,7 @@ function handleLogin(e) {
         closeModal('modal-auth'); 
         updateAuthUI(); 
         renderCurrentView(); 
-        toast("¡Hola de nuevo!"); 
+        toast("¡Bienvenido " + found.nombre + "!"); 
     } else { 
         toast("Usuario o clave incorrectos", "error"); 
     }
