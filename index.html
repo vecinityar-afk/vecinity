@@ -616,7 +616,7 @@
         function showRecoveryForm() { switchAuthTab('recovery'); }
         function logoutUser() { location.reload(); }
         function logoutAdmin() { isAdmin = false; showPage('page-home'); }
-        
+        }
         function toast(m, t="success") {
             const d = document.createElement('div'); d.className = `toast toast-${t}`; d.innerText = m;
             document.getElementById('toast-container').appendChild(d);
