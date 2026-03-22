@@ -1456,13 +1456,11 @@ function restoreSession() {
 }
 
 // ====== INIT ======
-function populateBarrioSelect() {
-  const sel = document.getElementById('reg-barrio');
-  sel.innerHTML = '<option value="">Seleccioná tu barrio</option>' + BARRIOS.map(b => `<option value="${b}">${b}</option>`).join('');
-  
-  const adminSel = document.getElementById('pub-barrio-select');
-  if(adminSel) {
-    adminSel.innerHTML = BARRIOS.map(b => `<option value="${b}">${b}</option>`).join('');
+unction populateBarrioSelect() {
+    const sel = document.getElementById('reg-barrio');
+    if(!sel) return;
+    const items = BARRIOS.sort().map(b => `<option value="${b}">${b}</option>`).join('');
+    sel.innerHTML = '<option value="" disabled selected>Elegí tu barrio...</option>' + items;
   }
 }
 
