@@ -614,16 +614,12 @@
         }
 
         function showRecoveryForm() { switchAuthTab('recovery'); }
-        function logoutUser() { location.reload(); }
-        function logoutAdmin() { isAdmin = false; showPage('page-home'); }
-        }
-        function toast(m, t="success") {
-            const d = document.createElement('div'); d.className = `toast toast-${t}`; d.innerText = m;
-            document.getElementById('toast-container').appendChild(d);
-            setTimeout(() => d.remove(), 4000);
+        function logoutUser() { 
+            localStorage.removeItem('vecinity_user'); 
+            location.reload(); 
         }
 
-        init();
+        window.onload = init;
     </script>
 </body>
 </html>
