@@ -1457,13 +1457,15 @@ function restoreSession() {
 
 // ====== INIT ======
 function populateBarrioSelect() {
-  const sel = document.getElementById('reg-barrio');
-  sel.innerHTML = '<option value="">Seleccioná tu barrio</option>' + BARRIOS.map(b => `<option value="${b}">${b}</option>`).join('');
-  
-  const adminSel = document.getElementById('pub-barrio-select');
-  if(adminSel) {
-    adminSel.innerHTML = BARRIOS.map(b => `<option value="${b}">${b}</option>`).join('');
-  }
+    const sel = document.getElementById('reg-barrio');
+    if (!sel) return; // Si no encuentra el elemento, no hace nada
+    
+    // Ordenamos y creamos las opciones
+    const options = BARRIOS.sort().map(b => `<option value="${b}">${b}</option>`).join('');
+    
+    // Insertamos el HTML
+    sel.innerHTML = '<option value="" disabled selected>Elegí tu barrio...</option>' + options;
+    console.log("Lista de barrios cargada en el registro"); // Para que veas en consola que funcion
 }
 
 function init() {
