@@ -275,7 +275,8 @@
 
     <script>
         // 1. CONFIGURACIÓN CENTRAL
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfMvRzIKzZDJ_ZeSiw_4IgkR9EWTLhZ1-OeXRkBeI4Ppq7D-M86xQMPOihaPPNvvqVkg/exec'; // <--- PEGA TU LINK ACÁ
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzCKq77t1mecvW_hwWF4vVPgILH8wnJpCbyDTSmcITGuuuHAQ_weEogc378CiKhu0Rpsw/exec
+            '; // <--- PEGA TU LINK ACÁ
         
 const BARRIOS = [
     "Acacias Blancas", "Alamos", "Altos de Pilar", "Aranjuez", "Ayres de Pilar", 
@@ -410,25 +411,65 @@ const BARRIOS = [
                 password: document.getElementById('reg-pass').value
             };
             
-            await sendToGoogle(data);
-            toast("¡Registro exitoso! Ya podés ingresar.");
-            closeModal('modal-auth');
-            setTimeout(() => location.reload(), 1500);
-        }
+// FUNCIÓN PARA ENVIAR DATOS A GOOGLE (REFORZADA)
+async function sendToGoogle(obj) {
+    try {
+        // Usamos text/plain para evitar bloqueos de seguridad de Google (CORS)
+        await fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors', 
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(obj)
+        });
+        return true;
+    } catch (e) {
+        console.error("Error crítico en el envío:", e);
+        return false;
+    }
+}
 
-        function handleLogin(e) {
-            e.preventDefault();
-            const user = document.getElementById('login-email').value.trim();
-            const pass = document.getElementById('login-pass').value;
+// FUNCIÓN PARA PROCESAR LA PUBLICACIÓN
+async function handlePublish(e) {
+    e.preventDefault();
+    
+    // Verificación de seguridad
+    if (!currentUser) {
+        toast("Debés iniciar sesión para publicar", "error");
+        return;
+    }
 
-            if(user === ADMIN_USER && pass === ADMIN_PASS) {
-                isAdmin = true; currentUser = null; closeModal('modal-auth'); showPage('page-admin'); return;
-            }
+    const btn = document.getElementById('pub-submit');
+    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = "Subiendo anuncio...";
 
-            const found = allData.find(u => (u.email === user || u.nick === user) && u.password === pass);
-            if(found) {
-                currentUser = found; closeModal('modal-auth'); updateAuthUI(); toast(`¡Hola de nuevo, ${found.nombre}!`);
-            } else { toast("Usuario o clave incorrectos", "error"); }
+    // Preparamos el objeto con nombres exactos para el Excel
+    const data = {
+        type: 'publication',
+        nombre: currentUser.nombre, // Quién publica
+        nick: currentUser.nick,
+        whatsapp: currentUser.whatsapp,
+        barrio: currentUser.barrio,
+        pub_title: document.getElementById('pub-title').value.trim(),
+        pub_description: document.getElementById('pub-desc').value.trim(),
+        pub_price: document.getElementById('pub-price').value.trim(),
+        pub_category: document.getElementById('pub-category').value,
+        pub_section: document.getElementById('pub-section').value,
+        pub_scope: document.querySelector('input[name="pub-scope"]:checked').value
+    };
+
+    const success = await sendToGoogle(data);
+
+    if (success) {
+        toast("¡Anuncio publicado correctamente!");
+        closeModal('modal-publish');
+        // Esperamos un momento para que Google procese antes de recargar
+        setTimeout(() => location.reload(), 2000);
+    } else {
+        toast("Error al conectar con el servidor", "error");
+        btn.disabled = false;
+        btn.innerText = originalText;
+    }
         }
 
         // 7. MOTOR DE PUBLICACIÓN (REAL)
