@@ -355,31 +355,41 @@ const BARRIOS = [
 
         // 5. RENDERIZADO DE CARDS (STYLE CANVA)
         function pubCardHTML(p) {
-            const stars = getUserStars(p.pub_user_nick || p.nick);
-            const waMsg = `Hola! Vi tu publicación "${p.pub_title || p.titulo}" en Vecinity...`;
-            const waLink = `https://wa.me/54${p.pub_user_whatsapp || p.whatsapp}?text=${encodeURIComponent(waMsg)}`;
+    const waMsg = `Hola! Vi tu publicación "${p.pub_title || p.titulo}" en Vecinity...`;
+    const waLink = `https://wa.me/54${p.pub_user_whatsapp || p.whatsapp}?text=${encodeURIComponent(waMsg)}`;
+    
+    // Obtenemos el nombre o nick del que publica
+    const autor = p.pub_user_nick || p.nick || "Vecino";
+    const inicial = autor.charAt(0).toUpperCase();
+
+    return `
+        <div class="pub-card fade-in">
+            <div class="flex justify-between items-center mb-4">
+                <span class="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                    ${p.pub_barrio || p.barrio || 'Pilar'}
+                </span>
+                ${p.pub_scope === 'global' ? '<span class="text-[9px] font-bold text-blue-500 uppercase">🌐 Global</span>' : ''}
+            </div>
             
-            return `
-                <div class="pub-card fade-in">
-                    <div class="flex justify-between items-center mb-6">
-                        <span class="badge-premium">${p.pub_barrio || p.barrio || 'Pilar'}</span>
-                        ${p.pub_scope === 'global' ? '<span class="text-[9px] font-black bg-blue-50 text-blue-600 px-3 py-1 rounded-full uppercase tracking-widest">🌐 Global</span>' : ''}
-                    </div>
-                    <h4 class="font-serif text-3xl font-bold mb-3 text-gray-900 leading-tight">${p.pub_title || p.titulo}</h4>
-                    <p class="text-gray-500 text-sm mb-8 line-clamp-3 leading-relaxed">${p.pub_description || p.descripcion}</p>
-                    <div class="flex justify-between items-center pt-8 border-t border-gray-50 mt-auto">
-                        <div>
-                            <span class="text-2xl font-black text-emerald-800 tracking-tighter">$${p.pub_price || p.precio || '0'}</span>
-                            <div class="flex gap-1 mt-1">${renderStarsUI(stars.avg)}</div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="openRatingModal('${p.pub_user_nick || p.nick}')" class="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-400 hover:text-amber-500 transition-colors"><i data-lucide="star" class="w-5 h-5"></i></button>
-                            <a href="${waLink}" target="_blank" class="w-12 h-12 rounded-2xl bg-emerald-700 flex items-center justify-center text-white shadow-xl hover:bg-emerald-800 transition-transform hover:scale-105"><i data-lucide="message-circle" class="w-6 h-6"></i></a>
-                        </div>
-                    </div>
+            <h4 class="font-serif text-2xl font-bold mb-2 text-gray-900">${p.pub_title || p.titulo}</h4>
+            <p class="text-gray-500 text-sm mb-6 line-clamp-2">${p.pub_description || p.descripcion}</p>
+            
+            <div class="flex items-center gap-2 mb-6 p-2 bg-gray-50 rounded-xl">
+                <div class="w-7 h-7 bg-emerald-700 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
+                    ${inicial}
                 </div>
-            `;
-        }
+                <span class="text-xs font-bold text-gray-600">Publicado por @${autor}</span>
+            </div>
+
+            <div class="flex justify-between items-center mt-auto border-t pt-5">
+                <span class="text-2xl font-black text-emerald-800">$${p.pub_price || p.precio || '0'}</span>
+                <a href="${waLink}" target="_blank" class="w-12 h-12 rounded-2xl bg-emerald-700 flex items-center justify-center text-white shadow-lg hover:bg-emerald-800 transition-transform hover:scale-105">
+                    <i data-lucide="message-circle" class="w-6 h-6"></i>
+                </a>
+            </div>
+        </div>
+    `;
+}
 
         // 6. MOTOR DE REGISTRO Y AUTH (REAL)
         async function handleUserRegister() {
