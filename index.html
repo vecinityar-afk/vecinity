@@ -529,13 +529,9 @@ async function syncDataFromSheets() {
 async function saveDataToSheets(action, record) {
   try {
     const response = await fetch(GOOGLE_SHEETS_URL, {
-      method: 'POST',
-      // Agregamos el header para que el servidor sepa que es JSON
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8', 
-      },
-      body: JSON.stringify({action, record})
-    });
+  method: 'POST',
+  body: JSON.stringify({action, record})
+});
     
     const result = await response.json();
     if(result.success) {
