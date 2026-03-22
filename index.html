@@ -1,175 +1,136 @@
 <!doctype html>
 <html lang="es" class="h-full">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vecinity - Marketplace Pilar</title>
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root{--emerald:#047857;--emerald-light:#059669;--emerald-dark:#065f46;--black:#111;--white:#fafafa;--gray:#f3f4f6;--gray2:#e5e7eb;--gray3:#9ca3af;--gray4:#6b7280}
-    body{font-family:'DM Sans',sans-serif;color:var(--black);background:var(--white);margin:0;padding:0;height:100%;width:100%}
-    .font-serif{font-family:'Playfair Display',serif}
-    .app-wrapper{width:100%;height:100%;overflow-y:auto;overflow-x:hidden;background:var(--white)}
-    .emerald-gradient{background:linear-gradient(135deg,#047857 0%,#059669 50%,#10b981 100%)}
-    .card-shadow{box-shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.06)}
-    .pub-card{border:1px solid var(--gray2);border-radius:14px;overflow:hidden;background:white;transition:all .25s}
-    .pub-card:hover{box-shadow:0 8px 25px rgba(0,0,0,0.08);transform:translateY(-2px)}
-    .badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600}
-    .search-input{background:white;border:2px solid var(--gray2);border-radius:12px;padding:12px 16px 12px 44px;width:100%;font-size:15px}
-    .tab-btn{padding:8px 16px;border-radius:8px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--gray4)}
-    .tab-btn.active{background:var(--emerald);color:white}
-    .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:50;display:flex;align-items:center;justify-content:center}
-    .hidden{display:none}
-    .toast{position:fixed;top:20px;right:20px;z-index:999;padding:12px 24px;border-radius:8px;color:#fff;font-weight:500;background:#047857}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vecinity - Marketplace Pilar</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --emerald: #047857; --soft-bg: #fdfdfb; }
+        body { font-family: 'DM Sans', sans-serif; background-color: var(--soft-bg); color: #1a1a1a; }
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .nav-blur { backdrop-filter: blur(12px); background: rgba(255, 255, 255, 0.8); }
+        .hero-gradient { background: linear-gradient(135deg, #047857 0%, #065f46 100%); }
+        .card-premium { transition: all 0.3s ease; border: 1px solid rgba(0,0,0,0.05); }
+        .card-premium:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.05); }
+        .hidden { display: none; }
+        /* Animación suave */
+        .fade-in { animation: fadeIn 0.8s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
 <body class="h-full">
-  <div class="app-wrapper" id="app">
-    <div id="toast-container"></div>
-
-    <div id="page-home">
-      <header class="w-full bg-white border-b border-gray-100 sticky top-0 z-40 px-4 py-3">
-        <div class="max-w-6xl mx-auto flex items-center justify-between">
-          <div class="flex items-center gap-2 cursor-pointer" onclick="goHome()">
-            <svg width="38" height="38" viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#047857"/><path d="M12 24 L20 12 L28 24 Z" fill="white" opacity="0.9"/></svg>
-            <span class="font-serif text-xl font-bold" style="color:var(--emerald)">Vecinity</span>
-          </div>
-          <div class="flex gap-2">
-            <button onclick="showModal('modal-auth')" class="px-4 py-2 rounded-full text-white text-sm font-semibold" style="background:var(--emerald)">Ingresar</button>
-            <button onclick="showPage('page-portal')" class="px-4 py-2 rounded-full border border-emerald-600 text-emerald-600 text-sm font-semibold">Mi Portal</button>
-          </div>
-        </div>
-      </header>
-
-      <section class="emerald-gradient py-16 px-4 text-center text-white">
-        <h1 class="font-serif text-4xl font-bold mb-4">Soltá lo que no usás, encontrá lo que necesitás</h1>
-        <p class="text-xl mb-8 opacity-90">Marketplace de Pilar · Tu comunidad vecinal</p>
-        <button onclick="showModal('modal-publish')" class="bg-white text-emerald-700 px-8 py-3 rounded-full font-bold shadow-lg hover:bg-gray-100 transition">
-          + Crear Publicación
-        </button>
-      </section>
-
-      <section class="max-w-6xl mx-auto px-4 py-12">
-        <h2 class="font-serif text-2xl font-bold mb-6">Publicaciones Recientes</h2>
-        <div id="global-pub-list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <p class="text-center col-span-full py-12 text-gray-400">Cargando publicaciones desde Pilar...</p>
-        </div>
-      </section>
-    </div>
-
-    <div id="modal-publish" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('modal-publish')">
-      <div class="bg-white rounded-2xl w-full max-w-lg mx-4 p-6 shadow-2xl">
-        <h2 class="font-serif text-xl font-bold mb-4">Nueva Publicación</h2>
-        <form onsubmit="handlePublish(event)" id="form-publish" class="space-y-4">
-          <input id="pub-title" type="text" placeholder="¿Qué vendés u ofrecés?" required class="w-full border rounded-lg px-4 py-2">
-          <textarea id="pub-desc" placeholder="Descripción clara para tus vecinos..." required class="w-full border rounded-lg px-4 py-2" rows="3"></textarea>
-          <div class="grid grid-cols-2 gap-4">
-            <input id="pub-price" type="text" placeholder="Precio (Ej: 5000)">
-            <input id="pub-barrio" type="text" placeholder="Tu Barrio" required>
-          </div>
-          <button type="submit" id="pub-submit" class="w-full py-3 rounded-full text-white font-bold" style="background:var(--emerald)">Publicar ahora</button>
-        </form>
-      </div>
-    </div>
-
-  </div>
-
-  <script>
-    // ==========================================
-    // CONFIGURACIÓN DE GOOGLE SHEETS
-    // ==========================================
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsCAnDhgVS4QYvNgWIcjQ2RBRB3C3NaotpoVbGuznWQakHjoeZ-iCNmX-R-WX7t0NV/exec'
-
-    let allData = [];
-
-    // Lógica para enviar y recibir datos
-    window.dataSdk = {
-      async init(handler) {
-        try {
-          const response = await fetch(SCRIPT_URL);
-          const data = await response.json();
-          allData = data;
-          handler.onDataChanged(data);
-        } catch (e) {
-          console.error("Error cargando datos", e);
-          document.getElementById('global-pub-list').innerHTML = "Error al conectar con la base de datos.";
-        }
-      },
-      async create(obj) {
-        const btn = document.getElementById('pub-submit');
-        btn.disabled = true; btn.innerText = "Enviando...";
+    <div class="app-wrapper">
         
-        try {
-          await fetch(SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify(obj)
-          });
-          toast("¡Publicado con éxito! Recargando...");
-          setTimeout(() => location.reload(), 2000);
-        } catch (e) {
-          toast("Error al publicar", "error");
-          btn.disabled = false; btn.innerText = "Publicar ahora";
-        }
-      }
-    };
-
-    // Funciones de la Interfaz
-    function showPage(id) { toast("Función en desarrollo para tu portal"); }
-    function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
-    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-    function goHome() { location.reload(); }
-
-    function toast(msg) {
-      const t = document.createElement('div');
-      t.className = 'toast'; t.innerText = msg;
-      document.getElementById('toast-container').appendChild(t);
-      setTimeout(() => t.remove(), 3000);
-    }
-
-    async function handlePublish(e) {
-      e.preventDefault();
-      const obj = {
-        type: 'publication',
-        pub_title: document.getElementById('pub-title').value,
-        pub_description: document.getElementById('pub-desc').value,
-        pub_price: document.getElementById('pub-price').value,
-        pub_barrio: document.getElementById('pub-barrio').value,
-        pub_user_nick: "Vecino"
-      };
-      await window.dataSdk.create(obj);
-    }
-
-    // Renderizado de las publicaciones
-    const dataHandler = {
-      onDataChanged(data) {
-        const list = document.getElementById('global-pub-list');
-        const pubs = data.filter(d => d.pub_title); // Solo lo que tiene título
-        
-        if (pubs.length === 0) {
-          list.innerHTML = "<p class='col-span-full text-center text-gray-500'>No hay publicaciones aún. ¡Sé el primero!</p>";
-          return;
-        }
-
-        list.innerHTML = pubs.map(p => `
-          <div class="pub-card p-4">
-            <span class="badge mb-2" style="background:#ecfdf5;color:var(--emerald)">${p.pub_barrio || 'Pilar'}</span>
-            <h3 class="font-serif font-bold text-lg">${p.pub_title}</h3>
-            <p class="text-sm text-gray-500 mb-4">${p.pub_description}</p>
-            <div class="flex justify-between items-center border-t pt-3">
-              <span class="font-bold text-emerald-700">$${p.pub_price || 'Consultar'}</span>
-              <button class="text-xs font-bold text-emerald-600">Ver más</button>
+        <nav class="fixed w-full z-50 nav-blur border-b border-gray-100">
+            <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                <div class="flex items-center gap-3 cursor-pointer" onclick="location.reload()">
+                    <div class="w-10 h-10 bg-[#047857] rounded-xl flex items-center justify-center shadow-lg shadow-emerald-900/20">
+                        <i data-lucide="home" class="text-white w-6 h-6"></i>
+                    </div>
+                    <span class="font-serif text-2xl font-bold tracking-tight text-emerald-900">Vecinity</span>
+                </div>
+                <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
+                    <a href="#marketplace" class="hover:text-emerald-700 transition">Marketplace</a>
+                    <a href="#" class="hover:text-emerald-700 transition">Barrios</a>
+                    <a href="#" class="hover:text-emerald-700 transition">Nosotros</a>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button onclick="showModal('modal-auth')" class="text-sm font-bold text-emerald-800 px-4 py-2">Ingresar</button>
+                    <button onclick="showModal('modal-publish')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-md transition-all">
+                        + Publicar
+                    </button>
+                </div>
             </div>
-          </div>
-        `).join('');
-      }
-    };
+        </nav>
 
-    // Iniciar todo
-    window.dataSdk.init(dataHandler);
-    lucide.createIcons();
-  </script>
-</body>
-</html>
+        <section class="relative pt-32 pb-20 px-6 overflow-hidden">
+            <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+                <div class="fade-in">
+                    <span class="inline-block px-4 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold mb-6 tracking-widest uppercase">Comunidad Pilar</span>
+                    <h1 class="font-serif text-5xl md:text-7xl text-gray-900 leading-[1.1] mb-6">
+                        Soltá lo que <span class="text-emerald-700 italic">no usás</span>, encontrá lo que necesitás.
+                    </h1>
+                    <p class="text-lg text-gray-600 mb-10 max-w-lg leading-relaxed">
+                        Un espacio exclusivo para vecinos de Pilar. Intercambiá, comprá y vendé en un entorno seguro y cercano.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <a href="#marketplace" class="bg-emerald-800 text-white px-10 py-4 rounded-full font-bold text-center shadow-xl hover:bg-emerald-900 transition-all">Explorar Marketplace</a>
+                        <div class="flex items-center gap-3 px-6 py-4">
+                            <div class="flex -space-x-2">
+                                <div class="w-8 h-8 rounded-full border-2 border-white bg-gray-200"></div>
+                                <div class="w-8 h-8 rounded-full border-2 border-white bg-gray-300"></div>
+                                <div class="w-8 h-8 rounded-full border-2 border-white bg-gray-400"></div>
+                            </div>
+                            <span class="text-sm text-gray-500 font-medium">+500 vecinos activos</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative fade-in" style="animation-delay: 0.2s">
+                    <div class="aspect-square bg-emerald-100 rounded-[40px] overflow-hidden shadow-2xl">
+                        <img src="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&q=80" alt="Marketplace" class="w-full h-full object-cover">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="marketplace" class="max-w-7xl mx-auto px-6 py-24 border-t border-gray-100">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+                <div>
+                    <h2 class="font-serif text-4xl text-gray-900 mb-2">Lo último en Pilar</h2>
+                    <p class="text-gray-500">Publicaciones recientes de tus barrios cercanos.</p>
+                </div>
+                <div class="flex bg-white p-1 rounded-xl shadow-sm border border-gray-100">
+                    <button class="px-6 py-2 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-bold">Todo</button>
+                    <button class="px-6 py-2 text-gray-400 text-sm hover:text-gray-600">Muebles</button>
+                    <button class="px-6 py-2 text-gray-400 text-sm hover:text-gray-600">Servicios</button>
+                </div>
+            </div>
+
+            <div id="global-pub-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="col-span-full py-20 text-center">
+                    <div class="inline-block w-8 h-8 border-4 border-emerald-700 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p class="text-gray-400 font-medium">Conectando con Google Sheets...</p>
+                </div>
+            </div>
+        </section>
+
+        <footer class="bg-white border-t border-gray-100 py-12 px-6">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-emerald-700 rounded-lg"></div>
+                    <span class="font-serif text-xl font-bold">Vecinity</span>
+                </div>
+                <p class="text-gray-400 text-sm">© 2025 Vecinity Pilar. Hecho para la comunidad.</p>
+                <div class="flex gap-6">
+                    <i data-lucide="instagram" class="w-5 h-5 text-gray-400 cursor-pointer"></i>
+                    <i data-lucide="mail" class="w-5 h-5 text-gray-400 cursor-pointer"></i>
+                </div>
+            </div>
+        </footer>
+
+        <div id="modal-publish" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('modal-publish')">
+            <div class="bg-white rounded-[32px] w-full max-w-lg mx-4 p-8 shadow-2xl fade-in">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="font-serif text-2xl text-gray-900">Nueva Publicación</h2>
+                    <button onclick="closeModal('modal-publish')" class="p-2 hover:bg-gray-100 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <form onsubmit="handlePublish(event)" id="form-publish" class="space-y-5">
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">¿Qué ofrecés?</label>
+                        <input id="pub-title" type="text" placeholder="Ej: Bicicleta rodado 29" required class="w-full border-b-2 border-gray-100 focus:border-emerald-700 py-3 outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Detalles</label>
+                        <textarea id="pub-desc" placeholder="Estado del producto, motivo de venta..." required class="w-full border-b-2 border-gray-100 focus:border-emerald-700 py-3 outline-none transition-all" rows="3"></textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-8">
+                        <div>
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Precio (ARS)</label>
+                            <input id="pub-price" type="text" placeholder="0.00" class="w-full border-b-2 border-gray-100 focus:border-emerald-700 py-3 outline-none">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Tu Barrio</label>
+                            <input id="pub-barrio" type
