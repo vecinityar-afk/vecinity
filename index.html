@@ -382,18 +382,22 @@
         }
 
         function handleLogin(e) {
-            e.preventDefault();
-            const user = document.getElementById('login-email').value.trim();
-            const pass = document.getElementById('login-pass').value;
-
-            if(user === ADMIN_USER && pass === ADMIN_PASS) {
-                isAdmin = true; currentUser = null; closeModal('modal-auth'); showPage('page-admin'); return;
-            }
-
-            const found = allData.find(u => (u.email === user || u.nick === user) && u.password === pass);
-            if(found) {
-                currentUser = found; closeModal('modal-auth'); updateAuthUI(); toast(`¡Hola de nuevo, ${found.nombre}!`);
-            } else { toast("Usuario o clave incorrectos", "error"); }
+    e.preventDefault();
+    const u = document.getElementById('login-email').value.trim();
+    const p = document.getElementById('login-pass').value;
+    const found = allData.find(x => (x.email === u || x.nick === u) && x.password === p);
+    
+    if(found) { 
+        currentUser = found; 
+        // 👇 AGREGÁ ESTA LÍNEA (Guarda al usuario en el navegador)
+        localStorage.setItem('vecinity_user', JSON.stringify(found)); 
+        
+        closeModal('modal-auth'); 
+        renderCurrentView(); 
+        toast("Hola " + found.nombre); 
+    } else { 
+        toast("Credenciales inválidas", "error"); 
+    }
         }
 
         // 7. MOTOR DE PUBLICACIÓN (REAL)
