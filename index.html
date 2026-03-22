@@ -433,29 +433,24 @@ const BARRIOS = [
 
         // 7. MOTOR DE PUBLICACIÓN (REAL)
         async function handlePublish(e) {
-            e.preventDefault();
-            if(!currentUser) return toast("Debés ingresar para publicar", "error");
-            const btn = document.getElementById('pub-submit');
-            btn.disabled = true; btn.innerText = "Subiendo...";
-            
-            const obj = {
-                type: 'publication',
-                pub_title: document.getElementById('pub-title').value,
-                pub_description: document.getElementById('pub-desc').value,
-                pub_price: document.getElementById('pub-price').value,
-                pub_section: document.getElementById('pub-section').value,
-                pub_category: document.getElementById('pub-category').value,
-                pub_barrio: currentUser.barrio,
-                pub_user_nick: currentUser.nick,
-                pub_user_whatsapp: currentUser.whatsapp,
-                pub_scope: document.querySelector('input[name="pub-scope"]:checked').value
-            };
+    e.preventDefault();
+    if(!currentUser) return toast("Debés ingresar para publicar", "error");
 
-            await sendToGoogle(obj);
-            toast("¡Publicado con éxito!");
-            location.reload();
-        }
-
+    const data = { 
+        type: 'publication', 
+        pub_title: document.getElementById('pub-title').value, 
+        pub_description: document.getElementById('pub-desc').value, 
+        pub_price: document.getElementById('pub-price').value, 
+        pub_barrio: currentUser.barrio, 
+        pub_user_nick: currentUser.nick, // <--- ESTO ES LO QUE ESTABA FALTANDO
+        pub_user_whatsapp: currentUser.whatsapp, 
+        pub_scope: document.querySelector('input[name="pub-scope"]:checked').value 
+    };
+    
+    await sendToGoogle(data);
+    toast("¡Publicado con éxito!");
+    location.reload();
+}
         // 8. MOTOR DE ESTRELLAS Y RESEÑAS (REAL)
         function getUserStars(nick) {
             const ratings = allData.filter(d => d.type === 'rating' && d.rating_to === nick);
