@@ -304,7 +304,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#047857;box-sh
        </div>
        <div><label class="block text-sm font-medium mb-1" for="reg-email">Email *</label><input id="reg-email" type="email" required class="w-full border rounded-lg px-3 py-2 text-sm" style="border-color:var(--gray2)">
        </div>
-       <div><label class="block text-sm font-medium mb-1" for="reg-barrio">Barrio *</label><<select id="reg-barrio" required class="w-full bg-gray-50 rounded-lg px-4 py-2 font-bold text-gray-500 outline-none"></select>
+       <div><label class="block text-sm font-medium mb-1" for="reg-barrio">Barrio *</label><<<select id="reg-barrio" name="reg-barrio" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 font-bold text-gray-500 outline-none block"></select>
        </div>
        <div><label class="block text-sm font-medium mb-1" for="reg-pass">Contraseña *</label>
         <div class="relative"><input id="reg-pass" type="password" required minlength="4" class="w-full border rounded-lg px-3 py-2 text-sm pr-10" style="border-color:var(--gray2)"><button type="button" onclick="togglePasswordVisibility('reg-pass')" class="absolute right-3 top-50% transform -translate-y-1/2 text-gray-400 hover:text-gray-600" style="transform:translateY(-50%)"><i data-lucide="eye" style="width:18px;height:18px" class="password-eye"></i></button>
@@ -560,15 +560,14 @@ function toast(msg, type='success') {
   setTimeout(()=>d.remove(), 3500);
 }
 
-function showModal(id) { 
-  document.getElementById(id).classList.remove('hidden');
-  
-  // Show admin barrio selector if in publish modal
-  if(id === 'modal-publish' && isAdmin) {
-    document.getElementById('admin-barrio-field').classList.remove('hidden');
-    populateBarrioSelect();
-  } else if(id === 'modal-publish' && !isAdmin) {
-    document.getElementById('admin-barrio-field').classList.add('hidden');
+function showModal(id, tab) { 
+    const modal = document.getElementById(id);
+    if(modal) modal.classList.remove('hidden'); 
+    
+    if(tab) switchAuthTab(tab); 
+    
+    // Forzamos la carga de barrios cada vez que se abre el modal
+    setTimeout(populateBarrioSelect, 100); 
   }
   
   lucide.createIcons();
@@ -1458,14 +1457,16 @@ function restoreSession() {
 // ====== INIT ======
 function populateBarrioSelect() {
     const sel = document.getElementById('reg-barrio');
-    if (!sel) return; // Si no encuentra el elemento, no hace nada
+    if (!sel) return; 
+
+    // Limpiamos y cargamos
+    let html = '<option value="" disabled selected>Seleccioná tu barrio...</option>';
+    BARRIOS.sort().forEach(b => {
+        html += `<option value="${b}">${b}</option>`;
+    });
     
-    // Ordenamos y creamos las opciones
-    const options = BARRIOS.sort().map(b => `<option value="${b}">${b}</option>`).join('');
-    
-    // Insertamos el HTML
-    sel.innerHTML = '<option value="" disabled selected>Elegí tu barrio...</option>' + options;
-    console.log("Lista de barrios cargada en el registro"); // Para que veas en consola que funcion
+    sel.innerHTML = html;
+    console.log("Barrios cargados: " + BARRIOS.length);
 }
 
 function init() {
