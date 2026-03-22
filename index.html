@@ -134,3 +134,83 @@
                         <div>
                             <label class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Tu Barrio</label>
                             <input id="pub-barrio" type
+                                <script>
+        // ==========================================
+        // CONFIGURACIÓN: PEGÁ TU URL DE GOOGLE AQUÍ
+        // ==========================================
+        const SCRIPT_URL = 'TU_URL_DE_APPS_SCRIPT_AQUI'; // <--- ESTA ES LA LÍNEA QUE BUSCÁS
+
+        window.dataSdk = {
+            async init(handler) {
+                try {
+                    const response = await fetch(SCRIPT_URL);
+                    const data = await response.json();
+                    handler.onDataChanged(data);
+                } catch (e) {
+                    console.error("Error de conexión", e);
+                    document.getElementById('global-pub-list').innerHTML = "<p class='col-span-full text-center py-12'>Error al conectar con Google Sheets. Verificá tu URL.</p>";
+                }
+            },
+            async create(obj) {
+                const btn = document.getElementById('pub-submit');
+                btn.disabled = true; btn.innerText = "Subiendo...";
+                try {
+                    await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(obj) });
+                    alert("¡Publicado con éxito en Pilar!");
+                    location.reload();
+                } catch (e) { alert("Error al publicar"); btn.disabled = false; }
+            }
+        };
+
+        function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        async function handlePublish(e) {
+            e.preventDefault();
+            const obj = {
+                type: 'publication',
+                pub_title: document.getElementById('pub-title').value,
+                pub_description: document.getElementById('pub-desc').value,
+                pub_price: document.getElementById('pub-price').value,
+                pub_barrio: document.getElementById('pub-barrio').value,
+                pub_user_nick: "Vecino"
+            };
+            await window.dataSdk.create(obj);
+        }
+
+        const dataHandler = {
+            onDataChanged(data) {
+                const list = document.getElementById('global-pub-list');
+                const pubs = data.filter(d => d.pub_title);
+                
+                if (pubs.length === 0) {
+                    list.innerHTML = "<p class='col-span-full text-center text-gray-400'>No hay publicaciones aún en el barrio.</p>";
+                    return;
+                }
+
+                list.innerHTML = pubs.map(p => `
+                    <div class="card-premium bg-white p-6 rounded-[32px] flex flex-col justify-between h-full shadow-sm">
+                        <div>
+                            <div class="flex items-center gap-2 mb-4">
+                                <span class="px-3 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-full">
+                                    ${p.pub_barrio || 'Pilar'}
+                                </span>
+                            </div>
+                            <h3 class="font-serif text-2xl text-gray-900 mb-2 leading-tight">${p.pub_title}</h3>
+                            <p class="text-gray-500 text-sm line-clamp-3 mb-6">${p.pub_description}</p>
+                        </div>
+                        <div class="flex items-center justify-between pt-6 border-t border-gray-50">
+                            <span class="text-xl font-bold text-gray-900">$${p.pub_price || '0'}</span>
+                            <button class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center hover:bg-emerald-700 hover:text-white transition-colors">
+                                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+            }
+        };
+
+        window.dataSdk.init(dataHandler);
+        lucide.createIcons();
+    </script>
