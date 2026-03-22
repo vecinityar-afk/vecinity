@@ -275,10 +275,35 @@
 
     <script>
         // 1. CONFIGURACIÓN CENTRAL
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxsYKxI2w2-b4z7Nx2YgvXbEeNvljMiUSCKNUgrapTwP89-3fVCr5JlZqR4hmPrsnd_MQ/exec'; // <--- PEGA TU LINK ACÁ
+        const SCRIPT_URL = 'TU_URL_DE_APPS_SCRIPT_AQUI'; // <--- PEGA TU LINK ACÁ
         
-        const BARRIOS = ["Ayres de Pilar","Acacias Blancas","Aranjuez","Beverly Hills","Boca Ratón","Brisas de Pilar","Campos de Álvarez","Cardales Village","Castaños de Pilar","Chacras de Murray","Club de Campo Los Lagartos","Complejo Pilar","Cruz del Sur","Del Viso","El Canton","El Jagüel","Estancias del Pilar","Fincas de Pilar","Golfer's Country Club","Greenlands","Haras del Pilar El Establo","Haras del Pilar La Caballeriza","Haras del Pilar La Pradera","Highland Park","La Delfina","La Escondida","La Lonja","La Peregrina","La Reserva","Lagos de Pilar","Las Calandrias","Las Liebres","Los Pilares","Mapuche","Martindale","Mayling","Miraflores","Nordelta","Palmas de Pilar","Pilar del Este","Pilar del Lago","Pilará","San Alfonso","San Eduardo","San Ramiro","San Sebastián","Santa Bárbara","Santa Guadalupe","Santa María de los Olivos","Tortugas","Villa Rosa","La Lomada"];
-
+const BARRIOS = [
+    "Acacias Blancas", "Alamos", "Altos de Pilar", "Aranjuez", "Ayres de Pilar", 
+    "Ayres de Vila", "Barrio Parque Irizar", "Beverly Hills", "Boca Ratón", 
+    "Bosque Real", "Brisas de Pilar", "Campos de Álvarez", "Cardales Village", 
+    "Carmel", "Castaños de Pilar", "Chacras de Murray", "Club de Campo Los Lagartos", 
+    "Complejo Pilar", "Cruz del Sur", "De Vicenzo Grande", "De Vicenzo Chico", 
+    "Del Viso", "El Aljibe", "El Barranco", "El Canton", "El Casco de Pilar", 
+    "El Establo (Haras del Pilar)", "El Jagüel", "El Laurel", "El Lucero", 
+    "El Recuerdo", "Estancias del Pilar - La Pionera", "Estancias del Pilar - La Paz", 
+    "Estancias del Pilar - El Recuerdo", "Fincas de Pilar", "Golfer's Country Club", 
+    "Greenlands", "Haras del Pilar - El Establo", "Haras del Pilar - La Caballeriza", 
+    "Haras del Pilar - La Pradera", "Highland Park", "La Alameda", "La Casualidad", 
+    "La Delfina", "La Escondida", "La Lomada", "La Lonja", "La Martinica", 
+    "La Montonera", "La Peregrina", "La Reserva", "Lagos de Pilar", "Las Brisas", 
+    "Las Calandrias", "Las Liebres", "Los Alisos", "Los Cardos", "Los Gallegos", 
+    "Los Jazmines", "Los Laureles", "Los Pilares", "Los Sauces", "Manzanares Chico", 
+    "Mapuche", "Martindale", "Mayling", "Miraflores", "Monterrey", "Nordelta", 
+    "Palmas de Pilar", "Parada Robles", "Pilar del Este - Los Jazmines", 
+    "Pilar del Este - San Alfonso", "Pilar del Este - San Eduardo", 
+    "Pilar del Este - San Ramiro", "Pilar del Este - San Ramón", 
+    "Pilar del Este - Santa Elena", "Pilar del Este - Santa Emilia", 
+    "Pilar del Este - Santa Guadalupe", "Pilar del Este - Santa Lucía", 
+    "Pilar del Este - Santa Sofía", "Pilar del Lago", "Pilar Golf", "Pilará", 
+    "Pueblo Caamaño", "San Alfonso", "San Eduardo", "San Jorge", "San Ramiro", 
+    "San Sebastián", "Santa Bárbara", "Santa Guadalupe", "Santa María de los Olivos", 
+    "Sudeste", "Tortugas", "Villa Rosa", "Windfield"
+];
         const CATS = [
             {id:'Escolares',label:'Escolares',icon:'📚'}, {id:'Comida',label:'Comida',icon:'🍔'}, {id:'Hogar',label:'Hogar',icon:'🏠'}, 
             {id:'Ropa',label:'Ropa',icon:'👕'}, {id:'Servicios',label:'Servicios',icon:'🔧'}, {id:'Electrónica',label:'Electrónica',icon:'💻'},
@@ -296,28 +321,11 @@
         const ADMIN_PASS = 'Argentoparma2026';
 
         // 3. INICIO
-       async function init() {
-    lucide.createIcons();
-    populateBarrioSelects();
-    renderHomeCategories();
-
-    // 1. Intentamos recuperar al usuario de la memoria
-    const savedUser = localStorage.getItem('vecinity_user');
-    
-    if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-        updateAuthUI();
-        // Si ya está logueado, lo dejamos pasar
-        if(SCRIPT_URL && SCRIPT_URL !== 'TU_URL_DE_APPS_SCRIPT_AQUI') {
+        async function init() {
+            lucide.createIcons();
+            renderHomeCategories();
+            populateBarrioSelects();
             await loadData();
-        }
-    } else {
-        // 2. SI NO HAY USUARIO: Bloqueamos y mostramos el modal de entrada
-        console.log("Acceso restringido: Usuario no identificado.");
-        showModal('modal-auth', 'login');
-        
-        // Opcional: Ocultamos el contenido del Home para que no vea nada de fondo
-        document.getElementById('home-categories').innerHTML = "";
         }
 
         async function loadData() {
@@ -329,21 +337,11 @@
         }
 
         // 4. MOTOR DE VISTAS (SPA)
-       function showPage(id) {
-    // 👇 CANDADO: Si no estás logueado y tratás de ir a otra página que no sea el Home o Términos...
-    if (!currentUser && id !== 'page-home' && id !== 'page-terms') {
-        toast("Debés registrarte para ver esta sección", "error");
-        showModal('modal-auth', 'register');
-        return; // No lo dejamos pasar
-    }
-
-    // Si pasó el candado, mostramos la página normalmente
-    ['page-home','page-global-search','page-barrio','page-portal'].forEach(p => {
-        document.getElementById(p).classList.add('hidden');
-    });
-    document.getElementById(id).classList.remove('hidden');
-    window.scrollTo(0,0);
-    renderCurrentView();
+        function showPage(id) {
+            ['page-home','page-global-search','page-barrio','page-portal','page-admin'].forEach(p => document.getElementById(p).classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            window.scrollTo(0,0);
+            renderCurrentView();
         }
 
         function renderCurrentView() {
@@ -409,30 +407,20 @@
         }
 
         function handleLogin(e) {
-    e.preventDefault();
-    
-    // 👇 PRIMERA VERIFICACIÓN: ¿Bajaron los datos de Google?
-    if (allData.length === 0) {
-        toast("Todavía estamos conectando con la base de datos. Esperá 2 segundos...", "error");
-        return;
-    }
+            e.preventDefault();
+            const user = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-pass').value;
 
-    const u = document.getElementById('login-email').value.trim();
-    const p = document.getElementById('login-pass').value;
-    
-    // Buscamos al usuario (Asegurate que los nombres coincidan con tu Excel)
-    const found = allData.find(x => (x.email === u || x.nick === u) && x.password === p);
-    
-    if(found) { 
-        currentUser = found; 
-        localStorage.setItem('vecinity_user', JSON.stringify(found)); 
-        closeModal('modal-auth'); 
-        renderCurrentView(); 
-        toast("¡Entraste con éxito, " + found.nombre + "!"); 
-    } else { 
-        toast("Usuario o clave incorrectos", "error"); 
-    }
-            
+            if(user === ADMIN_USER && pass === ADMIN_PASS) {
+                isAdmin = true; currentUser = null; closeModal('modal-auth'); showPage('page-admin'); return;
+            }
+
+            const found = allData.find(u => (u.email === user || u.nick === user) && u.password === pass);
+            if(found) {
+                currentUser = found; closeModal('modal-auth'); updateAuthUI(); toast(`¡Hola de nuevo, ${found.nombre}!`);
+            } else { toast("Usuario o clave incorrectos", "error"); }
+        }
+
         // 7. MOTOR DE PUBLICACIÓN (REAL)
         async function handlePublish(e) {
             e.preventDefault();
@@ -584,17 +572,9 @@
             document.getElementById('my-pub-list').innerHTML = myPubs.map(pubCardHTML).join('');
         }
 
-      function populateBarrioSelects() {
-    // Generamos las opciones
-    const options = '<option value="" disabled selected>Elegí tu barrio...</option>' + 
-                    BARRIOS.sort().map(b => `<option value="${b}">${b}</option>`).join('');
-    
-    // IMPORTANTE: Chequear que estos IDs existan en tu HTML
-    const regSelect = document.getElementById('reg-barrio'); // El del registro
-    const pubSelect = document.getElementById('pub-barrio-select'); // El de publicación
-    
-    if (regSelect) regSelect.innerHTML = options;
-    if (pubSelect) pubSelect.innerHTML = options;
+        function populateBarrioSelects() {
+            const options = '<option value="">Elegí un barrio...</option>' + BARRIOS.map(b => `<option value="${b}">${b}</option>`).join('');
+            document.getElementById('reg-barrio').innerHTML = options;
         }
 
         function showModal(id, tab) { 
@@ -614,12 +594,16 @@
         }
 
         function showRecoveryForm() { switchAuthTab('recovery'); }
-        function logoutUser() { 
-            localStorage.removeItem('vecinity_user'); 
-            location.reload(); 
+        function logoutUser() { location.reload(); }
+        function logoutAdmin() { isAdmin = false; showPage('page-home'); }
+        
+        function toast(m, t="success") {
+            const d = document.createElement('div'); d.className = `toast toast-${t}`; d.innerText = m;
+            document.getElementById('toast-container').appendChild(d);
+            setTimeout(() => d.remove(), 4000);
         }
 
-        window.onload = init;
+        init();
     </script>
 </body>
 </html>
