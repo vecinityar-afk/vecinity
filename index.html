@@ -562,12 +562,13 @@ function toast(msg, type='success') {
 
 function showModal(id, tab) { 
     const modal = document.getElementById(id);
-    if(modal) modal.classList.remove('hidden'); 
+    if (modal) modal.classList.remove('hidden'); 
     
-    if(tab) switchAuthTab(tab); 
+    if (tab) switchAuthTab(tab); 
     
-    // Forzamos la carga de barrios cada vez que se abre el modal
-    setTimeout(populateBarrioSelect, 100); 
+    // CAMBIO CLAVE: Carga los barrios con un mini retraso para asegurar que el select sea visible
+    setTimeout(populateBarrioSelect, 150); 
+    if (typeof lucide !== 'undefined') lucide.createIcons();
   }
   
   lucide.createIcons();
@@ -650,33 +651,33 @@ function togglePasswordVisibility(inputId) {
 }
 
 function handleLogin(e) {
-  e.preventDefault();
-  const emailOrNick = document.getElementById('login-email').value.trim();
-  const pass = document.getElementById('login-pass').value;
-  
-  // Check admin credentials
-  if(emailOrNick === 'vecinity.ar@gmail.com' && pass === 'Argentoparma2026') {
-    isAdmin = true;
-    currentUser = null;
-    document.getElementById('login-error').classList.add('hidden');
-    closeModal('modal-auth');
-    updateAuthUI();
-    toast('Bienvenido Administrador');
-    showPage('page-admin');
-    return;
-  }
-  
-  const user = getUsers().find(u => (u.email === emailOrNick || u.nick === emailOrNick) && u.password === pass);
-  if(!user) {
-    document.getElementById('login-error').textContent = 'Email/Nick o contraseña incorrectos';
-    document.getElementById('login-error').classList.remove('hidden');
-    return;
-  }
-  currentUser = user;
-  document.getElementById('login-error').classList.add('hidden');
-  closeModal('modal-auth');
-  updateAuthUI();
-  toast(`¡Bienvenido/a, ${user.nombre}!`);
+    e.preventDefault();
+    const u = document.getElementById('login-email').value.trim();
+    const p = document.getElementById('login-pass').value.trim();
+
+    // Login de emergencia por si el Excel falla
+    if(u === "admin" && p === "1234") {
+        currentUser = { nombre: "Admin", nick: "admin", barrio: "Pilar" };
+        updateAuthUI(); closeModal('modal-auth'); toast("Modo Admin"); return;
+    }
+
+    // CAMBIO CLAVE: Agregamos .toString() para evitar errores de tipo de dato
+    const found = allData.find(x => 
+        x.type === 'user' && 
+        (x.email === u || x.nick === u) && 
+        x.password.toString() === p.toString()
+    );
+
+    if(found) { 
+        currentUser = found; 
+        localStorage.setItem('vecinity_user', JSON.stringify(found)); 
+        closeModal('modal-auth'); 
+        updateAuthUI(); 
+        renderCurrentView(); 
+        toast("¡Hola de nuevo!"); 
+    } else { 
+        toast("Usuario o clave incorrectos", "error"); 
+    }
 }
 
 async function handleRegister(e) {
@@ -1482,7 +1483,7 @@ function init() {
 init();
 
 // ====== SESSION PERSISTENCE ======
-window.addEventListener('beforeunload', saveSession);
-</script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9e0737f4e7d99c09',t:'MTc3NDIwMzcxMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+window.onload = init;
+    </script>
+</body>
 </html>
