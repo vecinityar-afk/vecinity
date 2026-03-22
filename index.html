@@ -329,11 +329,21 @@
         }
 
         // 4. MOTOR DE VISTAS (SPA)
-        function showPage(id) {
-            ['page-home','page-global-search','page-barrio','page-portal','page-admin'].forEach(p => document.getElementById(p).classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-            window.scrollTo(0,0);
-            renderCurrentView();
+       function showPage(id) {
+    // 👇 CANDADO: Si no estás logueado y tratás de ir a otra página que no sea el Home o Términos...
+    if (!currentUser && id !== 'page-home' && id !== 'page-terms') {
+        toast("Debés registrarte para ver esta sección", "error");
+        showModal('modal-auth', 'register');
+        return; // No lo dejamos pasar
+    }
+
+    // Si pasó el candado, mostramos la página normalmente
+    ['page-home','page-global-search','page-barrio','page-portal'].forEach(p => {
+        document.getElementById(p).classList.add('hidden');
+    });
+    document.getElementById(id).classList.remove('hidden');
+    window.scrollTo(0,0);
+    renderCurrentView();
         }
 
         function renderCurrentView() {
