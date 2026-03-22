@@ -7,7 +7,6 @@
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
   <script src="/_sdk/element_sdk.js"></script>
-  <script src="/_sdk/data_sdk.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&amp;family=DM+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
   <style>
 html,body{margin:0;padding:0;height:100%;width:100%;background:var(--white)}
@@ -42,6 +41,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#047857;box-sh
 .pub-card:hover{box-shadow:0 8px 25px rgba(0,0,0,0.08);transform:translateY(-2px)}
 </style>
   <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
  </head>
  <body class="h-full">
   <div class="app-wrapper" id="app">
@@ -511,19 +511,44 @@ window.elementSdk.init({
   ])
 });
 
-// ====== DATA SDK ======
-const dataHandler = {
-  onDataChanged(data) {
-    allData = data;
-    renderCurrentView();
-  }
-};
+// ====== DATA SYNC WITH GOOGLE SHEETS ======
+const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxoVIjMKDL9hl4k4YGNpY9UsPyP-Lh3KbuorKJO5Dg3zlcVO5H08Q9Boxzf58qJMmUpGA/exec';
 
-async function initDataSDK() {
-  const r = await window.dataSdk.init(dataHandler);
-  if(!r.isOk) console.error('Data SDK init failed');
+async function syncDataFromSheets() {
+  try {
+    const response = await fetch(GOOGLE_SHEETS_URL);
+    const data = await response.json();
+    if(data && Array.isArray(data)) {
+      allData = data;
+      renderCurrentView();
+    }
+  } catch(e) {
+    console.error('Error syncing data:', e);
+  }
 }
-initDataSDK();
+
+async function saveDataToSheets(action, record) {
+  try {
+    const response = await fetch(GOOGLE_SHEETS_URL, {
+      method: 'POST',
+      body: JSON.stringify({action, record})
+    });
+    const result = await response.json();
+    if(result.success) {
+      await syncDataFromSheets();
+      return true;
+    }
+    return false;
+  } catch(e) {
+    console.error('Error saving data:', e);
+    return false;
+  }
+}
+
+// Initial sync on load
+syncDataFromSheets();
+// Periodic sync every 30 seconds
+setInterval(syncDataFromSheets, 30000);
 
 // ====== UTILITY ======
 function toast(msg, type='success') {
@@ -688,24 +713,25 @@ async function handleRegister(e) {
   const btn = document.getElementById('reg-submit');
   btn.disabled = true; btn.textContent = 'Registrando...';
 
-  const r = await window.dataSdk.create({
+  const newUser = {
     type:'user', nick, nombre, apellido, dni, whatsapp, email, barrio, password:pass,
     stars_total:'0', stars_count:'0',
     pub_title:'',pub_description:'',pub_category:'',pub_price:'',pub_type:'',pub_scope:'',pub_barrio:'',pub_user_nick:'',pub_user_whatsapp:'',pub_date:'',pub_section:'',pub_image_desc:'',admin_user:'',admin_pass:'',rating_from:'',rating_to:'',rating_value:0
-  });
+  };
 
+  const success = await saveDataToSheets('create', newUser);
   btn.disabled = false; btn.textContent = 'Registrarme';
-  if(r.isOk) {
+  
+  if(success) {
     document.getElementById('reg-error').classList.add('hidden');
-    // Auto-login after registration - wait for data to sync
     setTimeout(() => {
-      const newUser = getUsers().find(u => u.dni === dni);
-      if(newUser) {
-        currentUser = newUser;
+      const updatedUser = getUsers().find(u => u.dni === dni);
+      if(updatedUser) {
+        currentUser = updatedUser;
         updateAuthUI();
         closeModal('modal-auth');
         resetAuthForm();
-        toast(`¡Bienvenido/a, ${newUser.nombre}!`);
+        toast(`¡Bienvenido/a, ${updatedUser.nombre}!`);
         showPage('page-portal');
       } else {
         toast('¡Registro exitoso! Iniciá sesión.');
@@ -876,7 +902,6 @@ async function handlePublish(e) {
   const scope = document.querySelector('input[name="pub-scope"]:checked').value;
   const imgDesc = document.getElementById('pub-img-desc').value.trim();
   
-  // Allow admin to select any barrio for publishing
   let pubBarrio = currentUser ? currentUser.barrio : currentBarrio;
   if(isAdmin && document.getElementById('pub-barrio-select')) {
     pubBarrio = document.getElementById('pub-barrio-select').value || currentBarrio;
@@ -912,10 +937,10 @@ async function handlePublish(e) {
       pub_image_desc: imgDesc
     };
 
-    const r = await window.dataSdk.update(updated);
+    const success = await saveDataToSheets('update', updated);
     btn.disabled = false; 
     btn.textContent = 'Actualizar';
-    if(r.isOk) {
+    if(success) {
       closeModal('modal-publish');
       resetPublishForm();
       toast('¡Publicación actualizada!');
@@ -923,7 +948,7 @@ async function handlePublish(e) {
       toast('Error al actualizar','error');
     }
   } else {
-    const r = await window.dataSdk.create({
+    const newPub = {
       type:'publication',
       nick:'',nombre:'',apellido:'',dni:'',whatsapp:'',email:'',barrio:'',password:'',stars_total:'0',stars_count:'0',
       pub_title:title, pub_description:desc, pub_category:category, pub_price:price, pub_type:pubType, pub_condition:condition,
@@ -931,14 +956,16 @@ async function handlePublish(e) {
       pub_user_whatsapp:currentUser?.whatsapp || '', pub_date:new Date().toISOString(),
       pub_section:section, pub_image_desc:imgDesc,
       admin_user:'',admin_pass:'',rating_from:'',rating_to:'',rating_value:0
-    });
+    };
 
+    const success = await saveDataToSheets('create', newPub);
     btn.disabled = false; 
     btn.textContent = 'Publicar';
-    if(r.isOk) {
+    if(success) {
       closeModal('modal-publish');
       resetPublishForm();
       toast('¡Publicación creada!');
+      renderCurrentView();
     } else {
       toast('Error al publicar','error');
     }
@@ -1195,16 +1222,16 @@ function switchPortalTab(btn, tabId) {
 async function deletePub(backendId) {
   const pub = allData.find(d => d.__backendId === backendId);
   if(!pub) return;
-  const r = await window.dataSdk.delete(pub);
-  if(r.isOk) toast('Publicación eliminada');
+  const success = await saveDataToSheets('delete', pub);
+  if(success) toast('Publicación eliminada');
   else toast('Error al eliminar','error');
 }
 
 async function adminDeletePub(backendId) {
   const pub = allData.find(d => d.__backendId === backendId);
   if(!pub) return;
-  const r = await window.dataSdk.delete(pub);
-  if(r.isOk) {
+  const success = await saveDataToSheets('delete', pub);
+  if(success) {
     toast('Publicación eliminada por el admin');
     renderAdmin();
   }
@@ -1237,7 +1264,6 @@ function openEditPub(backendId) {
     document.getElementById('pub-serv-cat').value = pub.pub_category;
   }
 
-  // Show barrio selector for admin
   if(isAdmin && document.getElementById('pub-barrio-select')) {
     document.getElementById('pub-barrio-select').value = pub.pub_barrio;
   }
@@ -1289,15 +1315,20 @@ async function submitRating() {
   const btn = document.getElementById('rating-submit');
   btn.disabled = true; btn.textContent = 'Enviando...';
   const comment = document.getElementById('rating-comment-input').value.trim();
-  const r = await window.dataSdk.create({
+  const newRating = {
     type:'rating',
     nick:'',nombre:'',apellido:'',dni:'',whatsapp:'',email:'',barrio:'',password:'',stars_total:'0',stars_count:'0',
     pub_title:'',pub_description:'',pub_category:'',pub_price:'',pub_type:'',pub_scope:'',pub_barrio:'',pub_user_nick:'',pub_user_whatsapp:'',pub_date:'',pub_section:'',pub_image_desc:'',
     admin_user:'',admin_pass:'',
     rating_from:currentUser.nick, rating_to:ratingTarget, rating_value:ratingValue, rating_comment:comment
-  });
+  };
+  const success = await saveDataToSheets('create', newRating);
   btn.disabled = false; btn.textContent = 'Enviar Calificación';
-  if(r.isOk) { closeModal('modal-rating'); toast('¡Calificación enviada!'); }
+  if(success) { 
+    closeModal('modal-rating'); 
+    toast('¡Calificación enviada!');
+    renderCurrentView();
+  }
   else toast('Error al calificar','error');
 }
 
@@ -1353,7 +1384,7 @@ function renderAdmin() {
         <span class="font-medium">${p.pub_title}</span>
         <span class="text-xs ml-2" style="color:var(--gray3)">@${p.pub_user_nick} · ${p.pub_barrio} · ${p.pub_section}</span>
       </div>
-      <button onclick="adminDeletePub('${p.__backendId}')" class="text-xs text-red-500 hover:underline whitespace-nowrap ml-2">Eliminar</button>
+      <button onclick="adminDeletePub('${p.id}')" class="text-xs text-red-500 hover:underline whitespace-nowrap ml-2">Eliminar</button>
     </div>
   `).join('') : '<p class="text-center py-8" style="color:var(--gray3)">No hay publicaciones</p>';
 
@@ -1450,5 +1481,5 @@ init();
 // ====== SESSION PERSISTENCE ======
 window.addEventListener('beforeunload', saveSession);
 </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9e06819337c29c09',t:'MTc3NDE5NjI0Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9e0737f4e7d99c09',t:'MTc3NDIwMzcxMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
