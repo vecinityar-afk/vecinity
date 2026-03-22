@@ -296,11 +296,28 @@
         const ADMIN_PASS = 'Argentoparma2026';
 
         // 3. INICIO
-        async function init() {
-            lucide.createIcons();
-            renderHomeCategories();
-            populateBarrioSelects();
+       async function init() {
+    lucide.createIcons();
+    populateBarrioSelects();
+    renderHomeCategories();
+
+    // 1. Intentamos recuperar al usuario de la memoria
+    const savedUser = localStorage.getItem('vecinity_user');
+    
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        updateAuthUI();
+        // Si ya está logueado, lo dejamos pasar
+        if(SCRIPT_URL && SCRIPT_URL !== 'TU_URL_DE_APPS_SCRIPT_AQUI') {
             await loadData();
+        }
+    } else {
+        // 2. SI NO HAY USUARIO: Bloqueamos y mostramos el modal de entrada
+        console.log("Acceso restringido: Usuario no identificado.");
+        showModal('modal-auth', 'login');
+        
+        // Opcional: Ocultamos el contenido del Home para que no vea nada de fondo
+        document.getElementById('home-categories').innerHTML = "";
         }
 
         async function loadData() {
