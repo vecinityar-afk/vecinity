@@ -510,6 +510,18 @@ window.elementSdk.init({
 });
 
 // ====== DATA SYNC WITH GOOGLE SHEETS ======
+   // 1. PRIMERO LA URL (Sin esto nada funciona)
+const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxoVIjMKDL9hl4k4YGNpY9UsPyP-Lh3KbuorKJO5Dg3zlcVO5H08Q9Boxzf58qJMmUpGA/exec';
+
+// 2. LUEGO EL RESTO DE LAS CONSTANTES
+const BARRIOS = [ ... ]; // (tus barrios)
+
+// 3. RECIÉN AHÍ LAS FUNCIONES
+async function saveDataToSheets(action, record) {
+    // Ahora sí, acá GOOGLE_SHEETS_URL ya existe y funciona.
+    const response = await fetch(GOOGLE_SHEETS_URL, { ... });
+    // ...
+}
 const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwGQ-mCjGu-UIPxGoBJbARW_pmYF2plQxXyQhJa4U2d8ddUnFDg-kuuKYB2cZB32SjiQg/exec';
 
 async function syncDataFromSheets() {
