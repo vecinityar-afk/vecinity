@@ -528,25 +528,22 @@ async function syncDataFromSheets() {
 
 async function saveDataToSheets(action, record) {
   try {
+    // Usamos 'text/plain' para evitar que el navegador bloquee la petición por CORS
     const response = await fetch(GOOGLE_SHEETS_URL, {
       method: 'POST',
-      mode: 'no-cors', // Esto evita problemas de CORS en muchos navegadores
       headers: {
-        'Content-Type': 'text/plain;charset=utf-8', 
+        'Content-Type': 'text/plain;charset=utf-8',
       },
       body: JSON.stringify({action, record})
     });
 
-    // IMPORTANTE: Con 'no-cors' no podemos leer la respuesta (result.success).
-    // Para simplificar y que funcione, vamos a asumir que si no dio error de red, se envió.
-    
-    // Si preferís SEGURIDAD de que se guardó, usá un retraso y sincronizá:
-    await new Promise(resolve => setTimeout(resolve, 1000)); 
-    await syncDataFromSheets();
-    return true; 
-    
+    const result = await response.json();
+    return result.success; 
+
   } catch(e) {
-    console.error('Error salvando datos:', e);
+    console.error('Error de conexión:', e);
+    // Si da error de "CORS" pero los datos llegan al Excel, 
+    // podrías devolver 'true' aquí como parche temporal.
     return false;
   }
 }
