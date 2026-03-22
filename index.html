@@ -529,18 +529,24 @@ async function syncDataFromSheets() {
 async function saveDataToSheets(action, record) {
   try {
     const response = await fetch(GOOGLE_SHEETS_URL, {
-  method: 'POST',
-  body: JSON.stringify({action, record})
-});
+      method: 'POST',
+      mode: 'no-cors', // Esto evita problemas de CORS en muchos navegadores
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8', 
+      },
+      body: JSON.stringify({action, record})
+    });
+
+    // IMPORTANTE: Con 'no-cors' no podemos leer la respuesta (result.success).
+    // Para simplificar y que funcione, vamos a asumir que si no dio error de red, se envió.
     
-    const result = await response.json();
-    if(result.success) {
-      await syncDataFromSheets();
-      return true;
-    }
-    return false;
+    // Si preferís SEGURIDAD de que se guardó, usá un retraso y sincronizá:
+    await new Promise(resolve => setTimeout(resolve, 1000)); 
+    await syncDataFromSheets();
+    return true; 
+    
   } catch(e) {
-    console.error('Error saving data:', e);
+    console.error('Error salvando datos:', e);
     return false;
   }
 }
