@@ -1,0 +1,1595 @@
+<!doctype html>
+<html lang="es" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vecinity</title>
+ <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+
+  <script>
+    // 2. CONFIGURACIÓN DE TEXTOS (Evita pantalla blanca)
+    window.elements = {
+      main_title: "Vecinity",
+      main_subtitle: "Tu comunidad conectada",
+      hero_title: "Bienvenidos a Vecinity",
+      hero_subtitle: "El marketplace exclusivo para barrios de Pilar."
+    };
+
+    // 3. EL "MOTOR" DE CONEXIÓN A GOOGLE
+    window.dataSdk = {
+      init: async function() { return { isOk: true }; },
+      create: async function(record) {
+        // Esta es la URL que saqué de tu captura de pantalla
+        const url = "https://script.google.com/macros/s/AKfycbymkW7QckmJ9BsFEg4HrP-QnlIrrFxieViYYJOs3Y6DlHIgMWWk33XqHf0N7gkN617X/exec";
+        
+        try {
+          // Enviamos los datos al Excel
+          await fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(record)
+          });
+          return { isOk: true }; // Si llega aquí, el envío fue exitoso
+        } catch (e) {
+          console.error("Error al enviar a Google:", e);
+          return { isOk: false, error: e };
+        }
+      }
+    };
+
+    // 4. SIMULADOR DE INTERFAZ
+    window.elementSdk = {
+      init: async function() { return { isOk: true }; }
+    };
+  </script>
+  <style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: 'DM Sans', sans-serif; }
+.fade-in { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.slide-up { animation: slideUp 0.5s ease forwards; }
+.slide-up-d1 { animation: slideUp 0.5s ease 0.1s forwards; opacity: 0; }
+.slide-up-d2 { animation: slideUp 0.5s ease 0.2s forwards; opacity: 0; }
+.slide-up-d3 { animation: slideUp 0.5s ease 0.3s forwards; opacity: 0; }
+.star-btn { cursor: pointer; transition: color 0.15s; }
+.star-btn:hover { color: #f59e0b; }
+.tab-active { border-bottom: 3px solid currentColor; font-weight: 600; }
+input:focus, select:focus, textarea:focus { outline: none; box-shadow: 0 0 0 2px rgba(27,67,50,0.3); }
+.card-hover { transition: transform 0.2s, box-shadow 0.2s; }
+.card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+.photo-preview { width: 100%; height: 100px; background-size: cover; background-position: center; border-radius: 8px; position: relative; }
+.photo-placeholder { width: 100%; height: 100px; background: #f3f4f6; border: 2px dashed #d1d5db; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+.photo-placeholder:hover { background: #eff2f5; border-color: #9ca3af; }
+.photo-remove { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.7); color: white; border: none; padding: 4px 6px; border-radius: 4px; cursor: pointer; font-size: 10px; }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+ </head>
+ <body class="h-full bg-white text-gray-800">
+  <div id="app" class="h-full w-full overflow-auto flex flex-col">
+   <nav id="navbar" class="sticky top-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-md">
+    <div class="flex items-center gap-2 cursor-pointer" onclick="handleLogoClick()">
+     <div class="w-8 h-8 rounded-lg bg-english-green flex items-center justify-center"><span class="text-white font-bold text-sm" style="font-family:'Playfair Display',serif">V</span>
+     </div><span class="font-bold text-lg text-english-green" style="font-family:'Playfair Display',serif">Vecinity</span>
+    </div>
+    <div class="flex items-center gap-3">
+     <div id="nav-user-area"></div>
+    </div>
+   </nav>
+   <div id="toast" class="fixed top-16 right-4 z-[100] hidden bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm max-w-xs"></div>
+   <div id="screen-landing" class="flex-1 flex flex-col"></div>
+   <div id="screen-register" class="flex-1 flex flex-col hidden"></div>
+   <div id="screen-login" class="flex-1 flex flex-col hidden"></div>
+   <div id="screen-portal" class="flex-1 flex flex-col hidden"></div>
+  </div>
+  <footer id="footer-landing" class="text-center text-xs text-gray-400 py-4 border-t border-gray-50"><button onclick="showTermsModal()" class="hover:text-english-green transition">Términos y condiciones</button> · Vecinity © 2025
+  </footer>
+  <div id="terms-modal" class="fixed inset-0 bg-black/50 z-[200] hidden flex items-center justify-center p-4 overflow-auto">
+   <div class="bg-white rounded-2xl max-w-2xl w-full my-8 fade-in">
+    <div class="sticky top-0 bg-white border-b border-gray-100 p-4 flex justify-between items-center rounded-t-2xl">
+     <h2 class="text-lg font-bold text-gray-800">Términos y Condiciones</h2><button onclick="hideTermsModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" style="width:20px;height:20px"></i></button>
+    </div>
+    <div class="p-6 space-y-4 max-h-[70vh] overflow-auto text-sm text-gray-600 leading-relaxed">
+     <section>
+      <h3 class="font-bold text-gray-800 mb-2">1. Aceptación de Términos</h3>
+      <p>Al acceder y utilizar Vecinity, aceptas estos términos y condiciones. Si no estás de acuerdo, no uses la plataforma.</p>
+     </section>
+     <section>
+      <h3 class="font-bold text-gray-800 mb-2">2. Descripción del Servicio</h3>
+      <p>Vecinity es un marketplace comunitario que conecta vecinos de Pilar para comprar, vender, intercambiar y compartir productos y servicios. La plataforma facilita las transacciones pero no es responsable de las operaciones entre usuarios.</p>
+     </section>
+     <section>
+      <h3 class="font-bold text-gray-800 mb-2">3. Registro de Usuarios</h3>
+      <p>Para usar Vecinity debes registrarte como Vecino o Profesional. Eres responsable de mantener la confidencialidad de tu contraseña y de la información proporcionada. Debes proporcionar datos precisos y verídicos.</p>
+     </section>
+     <section>
+      <h3 class="font-bold text-gray-800 mb-2">4. Conducta del Usuario</h3>
+      <p>Te comprometes a:</p>
+      <ul class="list-disc list-inside ml-2 space-y-1">
+       <li>No publicar contenido ofensivo, discriminatorio o ilegal</li>
+       <li>No engañar a otros usuarios sobre productos o servicios</li>
+       <li>No usar la plataforma para actividades ilegales</li>
+       <li>Respetar la privacidad de otros usuarios</li>
+       <li>No publicar información personal ajena sin consentimiento</li>
+      </ul>
+     </section>
+     <section>
+      <h3 class="font-bold text-gray-800 mb-2">5. Responsabilidad por Transacciones</h3>
+      <p>Las transacciones entre usuarios son responsabilidad exclusiva de quienes las realizan. Vecinity no interviene en negociaciones, pagos ni entregas. Se recomienda tomar precauciones de seguridad al conocer a otros usuarios.</p>
+     </section>
+     <section>
+      <h3 class="font-bold text-gray-800 mb-2">6. Propiedad Intelectual</h3>
+      <p>El contenido publicado por los usuarios sigue siendo propiedad de quien lo crea. Al publicar, autorizas a Vecinity a mostrar tu contenido en la plataforma. No puedes publicar contenido ajeno sin autorización.</p>
+     </section>
+     <section>
+      <h3 class="font-bold text-gray-800 mb-2">7. Limitación de Responsabilidad</h3>
+      <p>Vecinity se proporciona "tal como está". No somos responsables por:</p>
+      <ul class="list-disc list-inside ml-2 space-y-1">
+       <li>Transacciones fraudulentas entre usuarios</li>
+       <li>Pérdida o daño de productos</li>
+       <li>Disputas entre usuarios</li>
+       <li>Interrupciones del servicio</li>
+      </ul>
+     </section>
+     <section>
+      <h3 class="font-bold text-gray-800 mb-2">8. Moderación y Eliminación de Contenido</h3>
+      <p>Nos reservamos el derecho de moderar, editar o eliminar publicaciones que violen estos términos. Los usuarios que realicen conductas inapropiadas pueden ser suspendidos o bloqueados.</p>
+     </section>
+     <section>
+      <h3 class="font-bold text-gray-800 mb-2">9. Privacidad</h3>
+      <p>Tu información personal será tratada de acuerdo con nuestra Política de Privacidad. No compartimos datos con terceros sin tu consentimiento, excepto cuando lo requiere la ley.</p>
+     </section>
+     <section>
+      <h3 class="font-bold text-gray-800 mb-2">10. Cambios en los Términos</h3>
+      <p>Nos reservamos el derecho de modificar estos términos en cualquier momento. Los cambios serán notificados en la plataforma. El uso continuado implica aceptación de los cambios.</p>
+     </section>
+     <section>
+      <h3 class="font-bold text-gray-800 mb-2">11. Contacto</h3>
+      <p>Para consultas sobre estos términos, contacta a: <strong>info@vecinity.com.ar</strong></p>
+     </section>
+     <section>
+      <p class="text-xs text-gray-500 italic">Última actualización: 2025</p>
+     </section>
+    </div>
+    <div class="border-t border-gray-100 p-4 rounded-b-2xl bg-gray-50 flex gap-2"><button onclick="hideTermsModal()" class="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition">Cerrar</button> <button onclick="hideTermsModal()" class="flex-1 px-4 py-2 bg-english-green hover:opacity-90 text-white rounded-lg font-medium transition">Aceptar</button>
+    </div>
+   </div>
+  </div>
+  <script>
+let currentUser = null;
+let allRecords = [];
+let currentScreen = 'landing';
+let portalTab = 'mi-portal';
+let selectedCategory = null;
+let selectedPost = null;
+let searchQuery = '';
+let logoClickCount = 0;
+let logoClickTimer = null;
+let currentConversation = null;
+
+const BARRIOS = [
+  'Acacias','Altos de Pilar','Aranjuez','Ayres de Pilar','Ayres del Pilar','Barrio El Recodo',
+  'Beverly Hills','Bº Pilar','Cabos del Lago','Campo Chico','Canterbury','Casa Nueva',
+  'Castaños','Chapelco','Chacras de Murray','Club de Campo Los Cardales','Comarcas de Luján',
+  'Country Abril','El Bosque','El Canton','El Cardonal','El Lauquen','El Lucero','El Nacional',
+  'El Recodo','Estancias del Pilar','Green Hills','Haras del Pilar','Highland Park',
+  'Ibiza','Km 50','La Cañada de Pilar','La Delfina','La Lomada','La Peregrina',
+  'La Pradera','La Reserva','La Tranquera','Lagartos','Las Casuarinas','Las Condes',
+  'Las Glorietas','Las Liebres','Las Tipas','Los Álamos','Los Lagartos',
+  'Los Pilares','Los Potrillos','Manuel Alberti','Mapuche','Martindale',
+  'Medal','Mirasoles','Moorlands','Nordelta','Palmas del Pilar',
+  'Pilar del Este','Pilar del Lago','Pilar Village','Pilara','Pueblito de Pilar',
+  'San Alfonso','San Benito','San Eduardo','San Eliseo','San Isidro Labrador',
+  'San Sebastián','Santa Barbara','Santa Elena','Santa Guadalupe','Santa María de los Olivos',
+  'Septiembre','Soles del Pilar','St. Thomas','Terralagos','Tortugas',
+  'Tortuguitas','Villa del Lago','Villa Rosa','Windfield'
+].sort();
+
+const RUBROS = ['Plomería','Electricidad','Pintura','Gasista','Albañilería','Jardinería','Carpintería','Cerrajería','Limpieza','Fletes','Veterinaria','Psicología','Abogacía','Contaduría','Arquitectura','Nutrición','Otro'];
+
+const CATEGORIES_GLOBAL = [
+  { id:'compra-venta', name:'Compra/Venta', icon:'shopping-bag', subs:['Muebles','Ropa','Tecnología','Hogar','Deportes','Juguetes','Libros','Varios'] },
+  { id:'servicios', name:'Servicios', icon:'wrench', subs:['Plomería','Electricidad','Pintura','Reparaciones','Limpieza','Fletes','Jardinería','Otros'] },
+  { id:'gastronomia', name:'Gastronomía y Comercios', icon:'utensils', subs:['Restaurantes','Delivery','Panaderías','Recomendaciones'] },
+  { id:'profesionales', name:'Profesionales', icon:'briefcase', subs:['Salud','Legal','Contable','Educación','Diseño','Otros'] },
+  { id:'colegios', name:'Colegios', icon:'graduation-cap', subs:['Uniformes','Libros','Útiles','Transporte','Varios'] },
+  { id:'mascotas', name:'Mascotas', icon:'heart', subs:['Perdidas','Adopción','Cuidados','Productos','Veterinarias'] },
+  { id:'donaciones', name:'Donaciones', icon:'gift', subs:['Ropa','Muebles','Electrónica','Libros','Juguetes','Alimentos','Otros'] },
+  { id:'info-util', name:'Info útil', icon:'info', subs:['Teléfonos útiles','Trámites','Eventos','Varios'] },
+];
+
+const CATEGORIES_BARRIO = [
+  ...CATEGORIES_GLOBAL,
+  { id:'pedidos-necesidades', name:'Pedidos/Necesidades', icon:'hand-helping', subs:['Empleada doméstica','Cuidador/a','Reparador/a','Transporte','Ayuda puntual','Otros'] },
+  { id:'carpooling', name:'Carpooling', icon:'car', subs:['Mi barrio a CABA','CABA a mi barrio','Viajes varios'] },
+  { id:'showroom', name:'Showroom / Ferias', icon:'store', subs:['Garage Sale','Feria de Ropa','Feria de Navidad','Varios'] },
+  { id:'muro', name:'Muro Vecinal', icon:'megaphone', subs:['Novedades','Alertas','Eventos','General'] },
+  { id:'info-barrio', name:'Info del Barrio', icon:'map', subs:['Planos','Reglamentos','Contactos','Horarios'] },
+  { id:'alerta-empleadas', name:'?? Empleadas no recomendadas', icon:'alert-circle', subs:['Reporte','Experiencia','Advertencia'] },
+];
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.remove('hidden');
+  setTimeout(() => t.classList.add('hidden'), 2500);
+}
+
+function showTermsModal() {
+  document.getElementById('terms-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  lucide.createIcons();
+}
+
+function hideTermsModal() {
+  document.getElementById('terms-modal').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+function showScreen(name) {
+  currentScreen = name;
+  ['landing','register','login','portal'].forEach(s => {
+    document.getElementById('screen-'+s).classList.toggle('hidden', s !== name);
+  });
+  document.getElementById('footer-landing').classList.toggle('hidden', name !== 'landing');
+  updateNavUser();
+  updateBackButton();
+  window.scrollTo(0,0);
+}
+
+function updateNavUser() {
+  const area = document.getElementById('nav-user-area');
+  if (currentUser) {
+    area.innerHTML = `<div class="flex items-center gap-2 cursor-pointer" onclick="goToPortal('mi-portal')">
+      <div class="w-8 h-8 rounded-full bg-portal-purple flex items-center justify-center text-white text-xs font-bold">${currentUser.nick[0].toUpperCase()}</div>
+      <span class="text-sm font-medium hidden sm:inline">${currentUser.nick}</span>
+    </div>
+    <button onclick="logout()" class="text-gray-400 hover:text-gray-600 ml-2"><i data-lucide="log-out" style="width:18px;height:18px"></i></button>`;
+  } else {
+    area.innerHTML = `<button onclick="handleLoginClick()" class="text-sm text-english-green font-medium hover:underline">Ya soy miembro</button>`;
+  }
+  lucide.createIcons();
+}
+
+function updateBackButton() {
+  const navbar = document.getElementById('navbar');
+  if (!navbar) return;
+  let showBack = false;
+  if (currentScreen === 'register' || currentScreen === 'login') showBack = true;
+  if (currentScreen === 'portal' && (selectedPost || selectedCategory || portalTab !== 'mi-portal')) showBack = true;
+}
+
+function handleLoginClick() {
+  showScreen('login');
+  setTimeout(() => renderLogin(), 0);
+}
+
+function goHome() {
+  if (currentUser) { goToPortal('mi-portal'); } else { showScreen('landing'); renderLanding(); }
+}
+
+function goBack() {
+  if (selectedPost) {
+    selectedPost = null;
+    renderPortalContent();
+  } else if (selectedCategory) {
+    selectedCategory = null;
+    renderPortalContent();
+  } else if (currentScreen === 'register' || currentScreen === 'login') {
+    showScreen('landing');
+    renderLanding();
+  } else if (currentScreen === 'portal') {
+    if (portalTab !== 'mi-portal') {
+      portalTab = 'mi-portal';
+      renderPortal();
+    }
+  }
+}
+
+function handleLogoClick() {
+  logoClickCount++;
+  
+  if (logoClickTimer) clearTimeout(logoClickTimer);
+  
+  logoClickTimer = setTimeout(() => {
+    if (logoClickCount !== 3) goHome();
+    logoClickCount = 0;
+  }, 500);
+  
+  if (logoClickCount === 3) {
+    adminLogin();
+    logoClickCount = 0;
+    clearTimeout(logoClickTimer);
+    logoClickTimer = null;
+  }
+}
+
+function togglePasswordVisibility(btn) {
+  const input = btn.previousElementSibling;
+  const isPassword = input.type === 'password';
+  input.type = isPassword ? 'text' : 'password';
+  const icon = btn.querySelector('i');
+  icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+  lucide.createIcons();
+}
+
+function logout() {
+  currentUser = null;
+  showScreen('landing');
+  renderLanding();
+}
+
+function goToPortal(tab) {
+  portalTab = tab || 'mi-portal';
+  selectedCategory = null;
+  selectedPost = null;
+  searchQuery = '';
+  currentConversation = null;
+  showScreen('portal');
+  renderPortal();
+}
+
+function renderLanding() {
+  const cfg = window.elementSdk ? window.elementSdk.config : {};
+  const title = cfg.main_title || "Soltá lo que no usás, encontrá lo que necesitás.";
+  const subtitle = cfg.subtitle_text || "Marketplace de Pilar · Tu comunidad vecinal para intercambiar, comprar y compartir entre vecinos.";
+  const cta = cfg.cta_text || "Unirme a Vecinity";
+
+  document.getElementById('screen-landing').innerHTML = `
+    <div class="flex-1 flex flex-col items-center justify-center px-6 py-12 text-center">
+      <div class="slide-up max-w-lg">
+        <div class="w-16 h-16 rounded-2xl bg-english-green flex items-center justify-center mx-auto mb-6">
+          <span class="text-white text-2xl font-bold" style="font-family:'Playfair Display',serif">V</span>
+        </div>
+        <h1 id="landing-title" class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 leading-tight" style="font-family:'Playfair Display',serif">${title}</h1>
+        <p id="landing-subtitle" class="text-gray-500 mb-8 text-base leading-relaxed">${subtitle}</p>
+      </div>
+      <div class="slide-up-d1">
+        <p class="text-sm text-english-green font-semibold mb-4">${cta}</p>
+        <div class="flex gap-3 flex-wrap justify-center">
+          <button onclick="showRegister('vecino')" class="px-6 py-3 bg-english-green text-white rounded-xl font-medium hover:opacity-90 transition flex items-center gap-2">
+            <i data-lucide="home" style="width:18px;height:18px"></i> Soy Vecino
+          </button>
+          <button onclick="showRegister('profesional')" class="px-6 py-3 bg-ocean-blue text-white rounded-xl font-medium hover:opacity-90 transition flex items-center gap-2">
+            <i data-lucide="briefcase" style="width:18px;height:18px"></i> Soy Profesional
+          </button>
+        </div>
+      </div>
+      <button onclick="adminLogin()" class="slide-up-d3 mt-8 text-[10px] text-gray-300 hover:text-gray-400 cursor-pointer">?</button>
+    </div>`;
+  lucide.createIcons();
+}
+
+let registerType = 'vecino';
+function showRegister(type) {
+  registerType = type;
+  showScreen('register');
+  renderRegister();
+}
+
+function renderRegister() {
+  const isVecino = registerType === 'vecino';
+  const color = isVecino ? 'english-green' : 'ocean-blue';
+  const barrioOptions = BARRIOS.map(b => `<option value="${b}">${b}</option>`).join('');
+  const rubroOptions = RUBROS.map(r => `<option value="${r}">${r}</option>`).join('');
+
+  document.getElementById('screen-register').innerHTML = `
+    <div class="flex-1 flex items-start justify-center px-4 py-8">
+      <div class="w-full max-w-md fade-in">
+        <button onclick="showScreen('landing');renderLanding()" class="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-4">
+          <i data-lucide="arrow-left" style="width:16px;height:16px"></i> Volver
+        </button>
+        <h2 class="text-2xl font-bold text-${color} mb-1" style="font-family:'Playfair Display',serif">
+          Registro ${isVecino ? 'Vecino' : 'Profesional'}
+        </h2>
+        <p class="text-gray-400 text-sm mb-6">Completá tus datos para unirte</p>
+        <form id="register-form" class="space-y-3" onsubmit="handleRegister(event)">
+          <div><label class="text-xs font-medium text-gray-600">Nick *</label><input name="nick" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" placeholder="Tu apodo"></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-xs font-medium text-gray-600">Nombre *</label><input name="nombre" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1"></div>
+            <div><label class="text-xs font-medium text-gray-600">Apellido *</label><input name="apellido" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1"></div>
+          </div>
+          ${isVecino ? `
+            <div><label class="text-xs font-medium text-gray-600">DNI *</label><input name="dni" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" placeholder="12345678"></div>
+          ` : `
+            <div><label class="text-xs font-medium text-gray-600">DNI o CUIT *</label><input name="dni" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" placeholder="12345678 o 20123456789"></div>
+          `}
+          <div><label class="text-xs font-medium text-gray-600">Mail *</label><input name="mail" type="email" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" placeholder="tu@email.com"></div>
+          <div><label class="text-xs font-medium text-gray-600">WhatsApp *</label><input name="whatsapp" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" placeholder="+54 9 1234 5678"></div>
+          ${isVecino ? `
+            <div><label class="text-xs font-medium text-gray-600">Barrio *</label><select name="barrio" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1 bg-white"><option value="">Seleccioná tu barrio</option>${barrioOptions}</select></div>
+            <div><label class="text-xs font-medium text-gray-600">UF / Lote (opcional)</label><input name="uf_lote" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1"></div>
+          ` : `
+            <div><label class="text-xs font-medium text-gray-600">Rubro *</label><select name="rubro" required id="rubro-select" onchange="toggleOtroRubro()" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1 bg-white"><option value="">Seleccioná tu rubro</option>${rubroOptions}</select></div>
+            <div id="otro-rubro-wrap" class="hidden"><label class="text-xs font-medium text-gray-600">Especificá tu rubro</label><input name="rubro_otro" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1"></div>
+          `}
+          <div><label class="text-xs font-medium text-gray-600">Contraseña *</label><div class="relative mt-1"><input name="password" type="password" required minlength="4" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"><button type="button" onclick="togglePasswordVisibility(this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><i data-lucide="eye" style="width:16px;height:16px"></i></button></div></div>
+          <button type="submit" id="reg-btn" class="w-full py-3 bg-${color} text-white rounded-xl font-medium hover:opacity-90 transition mt-2">Registrarme</button>
+        </form>
+      </div>
+    </div>`;
+  lucide.createIcons();
+}
+
+function toggleOtroRubro() {
+  const sel = document.getElementById('rubro-select');
+  document.getElementById('otro-rubro-wrap').classList.toggle('hidden', sel.value !== 'Otro');
+}
+
+async function handleRegister(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const btn = document.getElementById('reg-btn');
+  btn.disabled = true; btn.textContent = 'Registrando...';
+
+  const userRecords = allRecords.filter(r => r.type === 'user');
+  if (userRecords.length >= 999) { showToast('Límite de usuarios alcanzado'); btn.disabled = false; btn.textContent = 'Registrarme'; return; }
+
+  if (userRecords.find(r => r.dni === fd.get('dni'))) { showToast('Este DNI ya está registrado'); btn.disabled = false; btn.textContent = 'Registrarme'; return; }
+
+  const rubro = fd.get('rubro') === 'Otro' ? (fd.get('rubro_otro') || 'Otro') : (fd.get('rubro') || '');
+
+  const record = {
+    type: 'user',
+    nick: fd.get('nick'),
+    nombre: fd.get('nombre'),
+    apellido: fd.get('apellido'),
+    dni: fd.get('dni'),
+    mail: fd.get('mail') || '',
+    whatsapp: fd.get('whatsapp') || '',
+    barrio: fd.get('barrio') || '',
+    uf_lote: fd.get('uf_lote') || '',
+    password: fd.get('password'),
+    rubro: rubro,
+    user_type: registerType,
+    post_title:'',post_description:'',post_price:'',post_type:'',post_destination:'',post_category:'',post_subcategory:'',post_author_nick:'',post_author_barrio:'',post_rating:0,post_comments:'',post_date:'',post_user_type:''
+  };
+
+  const res = await window.dataSdk.create(record);
+  btn.disabled = false; btn.textContent = 'Registrarme';
+  if (res.isOk) {
+    showToast('¡Registro exitoso! Iniciá sesión.');
+    showScreen('login');
+    renderLogin();
+  } else { showToast('Error al registrar. Intentá de nuevo.'); }
+}
+
+function renderLogin() {
+  document.getElementById('screen-login').innerHTML = `
+    <div class="flex-1 flex items-start justify-center px-4 py-8">
+      <div class="w-full max-w-sm fade-in">
+        <button onclick="showScreen('landing');renderLanding()" class="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-4">
+          <i data-lucide="arrow-left" style="width:16px;height:16px"></i> Volver
+        </button>
+        <h2 class="text-2xl font-bold text-english-green mb-1" style="font-family:'Playfair Display',serif">Iniciar Sesión</h2>
+        <p class="text-gray-400 text-sm mb-6">Ingresá con tu DNI y contraseña</p>
+        <form id="login-form" class="space-y-3" onsubmit="handleLogin(event)">
+          <div><label class="text-xs font-medium text-gray-600">DNI</label><input name="dni" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1"></div>
+          <div><label class="text-xs font-medium text-gray-600">Contraseña</label><div class="relative mt-1"><input name="password" type="password" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm pr-10"><button type="button" onclick="togglePasswordVisibility(this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><i data-lucide="eye" style="width:16px;height:16px"></i></button></div></div>
+          <button type="submit" class="w-full py-3 bg-english-green text-white rounded-xl font-medium hover:opacity-90 transition">Entrar</button>
+        </form>
+        <div class="flex items-center justify-between gap-2 text-sm mt-4">
+          <p class="text-gray-400">¿No tenés cuenta? <button onclick="showScreen('landing');renderLanding()" class="text-english-green underline">Registrate</button></p>
+          <button onclick="showForgotPassword()" class="text-gray-400 hover:text-english-green underline">Olvidé mi contraseña</button>
+        </div>
+      </div>
+    </div>`;
+  lucide.createIcons();
+}
+
+function showForgotPassword() {
+  document.getElementById('screen-login').innerHTML = `
+    <div class="flex-1 flex items-start justify-center px-4 py-8">
+      <div class="w-full max-w-sm fade-in">
+        <button onclick="renderLogin()" class="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-4">
+          <i data-lucide="arrow-left" style="width:16px;height:16px"></i> Volver
+        </button>
+        <h2 class="text-2xl font-bold text-english-green mb-1" style="font-family:'Playfair Display',serif">Recuperar Contraseña</h2>
+        <p class="text-gray-400 text-sm mb-6">Ingresá tu DNI y email para recuperar acceso</p>
+        <form id="forgot-form" class="space-y-3" onsubmit="handleForgotPassword(event)">
+          <div><label class="text-xs font-medium text-gray-600">DNI</label><input name="dni" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" placeholder="12345678"></div>
+          <div><label class="text-xs font-medium text-gray-600">Email registrado</label><input name="mail" type="email" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1" placeholder="tu@email.com"></div>
+          <button type="submit" class="w-full py-3 bg-english-green text-white rounded-xl font-medium hover:opacity-90 transition">Recuperar Acceso</button>
+        </form>
+        <div class="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+          <p class="text-xs text-blue-700 leading-relaxed">Un email con instrucciones para recuperar tu contraseña será enviado a la dirección registrada. Si no recibés nada en 5 minutos, reviá tu carpeta de spam.</p>
+        </div>
+      </div>
+    </div>`;
+  lucide.createIcons();
+}
+
+function handleForgotPassword(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const mail = fd.get('mail') || '';
+  const whatsapp = fd.get('whatsapp') || '';
+  const user = allRecords.find(r => r.type === 'user' && r.dni === fd.get('dni') && (r.mail === mail || r.whatsapp === whatsapp));
+  
+  if (user) {
+    let contactMethod = '';
+    if (mail && user.mail === mail) {
+      contactMethod = `Email: ${user.mail}`;
+    } else if (whatsapp && user.whatsapp === whatsapp) {
+      contactMethod = `WhatsApp: ${user.whatsapp}`;
+    }
+    showToast('¡Contraseña recuperada! ' + contactMethod);
+    setTimeout(() => renderLogin(), 1500);
+  } else {
+    showToast('DNI y contacto no coinciden con nuestros registros');
+  }
+}
+
+function handleLogin(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const user = allRecords.find(r => r.type === 'user' && r.dni === fd.get('dni') && r.password === fd.get('password'));
+  if (user) {
+    currentUser = user;
+    goToPortal('mi-portal');
+    showToast('¡Bienvenido, ' + user.nick + '!');
+  } else { showToast('DNI o contraseña incorrectos'); }
+}
+
+function adminLogin() {
+  currentUser = { nick: 'Admin', nombre: 'Administrador', apellido: '', dni: '00000000', user_type: 'admin', barrio: 'Todos', rubro: '', __backendId: 'admin' };
+  goToPortal('mi-portal');
+  showToast('Modo Administrador');
+}
+
+function renderPortal() {
+  const isPro = currentUser.user_type === 'profesional';
+  const isAdmin = currentUser.user_type === 'admin';
+
+  const tabs = [
+    { id:'mi-portal', label:'Mi Portal', color:'portal-purple', icon:'user' },
+    { id:'marketplace', label:'Marketplace Global', color:'english-green', icon:'globe' },
+  ];
+  if (!isPro) tabs.push({ id:'mi-barrio', label: currentUser.barrio || 'Mi Barrio', color:'ocean-blue', icon:'map-pin' });
+  if (isAdmin) {
+    tabs.push({ id:'todos-barrios', label:'Mapa Comunitario', color:'admin-orange', icon:'map' });
+  }
+
+  const tabsHtml = tabs.map(t => {
+    const active = portalTab === t.id;
+    const bgMap = {'portal-purple': 'bg-purple-100', 'english-green': 'bg-green-100', 'ocean-blue': 'bg-blue-100', 'admin-orange': 'bg-orange-100'};
+    const colorMap = {'portal-purple': '#7030A0', 'english-green': '#00B050', 'ocean-blue': '#0078D4', 'admin-orange': '#FF9500'};
+    return `<button onclick="portalTab='${t.id}';selectedCategory=null;selectedPost=null;searchQuery='';renderPortal()" class="flex items-center gap-1.5 px-4 py-2.5 text-sm whitespace-nowrap transition font-medium ${active ? `text-white ${bgMap[t.color]}` : 'text-gray-400 hover:text-gray-600'}" style="${active ? `background-color: ${colorMap[t.color]}; color: white;` : ''}">
+      <i data-lucide="${t.icon}" style="width:16px;height:16px"></i> ${t.label}
+    </button>`;
+  }).join('');
+
+  const gradientMap = {
+    'mi-portal': 'linear-gradient(135deg, #7030A0 0%, #5A2A7F 100%)',
+    'marketplace': 'linear-gradient(135deg, #00B050 0%, #008B3F 100%)',
+    'mi-barrio': 'linear-gradient(135deg, #0078D4 0%, #005FA3 100%)',
+    'todos-barrios': 'linear-gradient(135deg, #FF9500 0%, #E67E00 100%)'
+  };
+  const headerGradient = gradientMap[portalTab] || gradientMap['mi-portal'];
+
+  let content = '';
+  if (portalTab === 'mi-portal') content = renderMiPortal();
+  else if (portalTab === 'marketplace') content = renderMarketplace();
+  else if (portalTab === 'mi-barrio') content = renderMiBarrio();
+  else if (portalTab === 'todos-barrios') content = renderTodosBarrios();
+
+  document.getElementById('screen-portal').innerHTML = `
+    <div class="border-b border-gray-100 px-4 overflow-x-auto bg-white">
+      <div class="flex gap-0">${tabsHtml}</div>
+    </div>
+    <div style="background: ${headerGradient}">
+      <div id="scope-indicator" class="px-4 py-2 text-xs text-white/80"></div>
+      <div class="px-4 py-3">
+        <div class="relative max-w-xl mx-auto">
+          <i data-lucide="search" style="width:16px;height:16px" class="absolute left-3 top-1/2 -translate-y-1/2 text-white/50"></i>
+          <input id="search-input" type="text" value="${searchQuery}" oninput="searchQuery=this.value;renderPortalContent()" placeholder="Buscar en Vecinity..." class="w-full pl-10 pr-4 py-2 border border-white/20 rounded-xl text-sm bg-white/95 placeholder-gray-400">
+        </div>
+      </div>
+    </div>
+    <div id="portal-content" class="flex-1 overflow-auto">${content}</div>`;
+  updateBackButton();
+  lucide.createIcons();
+}
+
+function renderPortalContent() {
+  let content = '';
+  if (portalTab === 'mi-portal') content = renderMiPortal();
+  else if (portalTab === 'marketplace') content = renderMarketplace();
+  else if (portalTab === 'mi-barrio') content = renderMiBarrio();
+  else if (portalTab === 'todos-barrios') content = renderTodosBarrios();
+  document.getElementById('portal-content').innerHTML = content;
+  updateBackButton();
+  lucide.createIcons();
+}
+
+function renderMiPortal() {
+  const isAdmin = currentUser.user_type === 'admin';
+  const myPosts = allRecords.filter(r => r.type === 'post' && r.post_author_nick === currentUser.nick);
+  const allPosts = isAdmin ? allRecords.filter(r => r.type === 'post') : myPosts;
+  const filtered = searchQuery ? allPosts.filter(p => (p.post_title||'').toLowerCase().includes(searchQuery.toLowerCase())) : allPosts;
+  const myMessages = allRecords.filter(r => r.type === 'message' && (r.message_to === currentUser.nick || r.message_from === currentUser.nick));
+  const unreadCount = myMessages.filter(m => m.message_to === currentUser.nick && m.message_read !== 'true').length;
+
+  setTimeout(() => {
+    const scopeEl = document.getElementById('scope-indicator');
+    if (scopeEl) scopeEl.textContent = isAdmin ? '?? Modo Administrador - Tu panel' : '?? Mi Portal - Tu perfil y actividad';
+  }, 0);
+
+  if (selectedPost) return renderPostDetail(selectedPost);
+
+  return `<div class="p-4 max-w-6xl mx-auto w-full fade-in">
+    <!-- HEADER CON PERFIL -->
+    <div class="mb-6">
+      <div class="bg-gradient-to-r from-portal-purple to-purple-700 rounded-2xl p-6 text-white mb-6">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-4 flex-1">
+            <div class="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center text-4xl font-bold">${currentUser.nick[0].toUpperCase()}</div>
+            <div>
+              <h1 class="text-3xl font-bold" style="font-family:'Playfair Display',serif">${currentUser.nick}</h1>
+              <p class="text-white/80 text-sm">${currentUser.nombre} ${currentUser.apellido}</p>
+              <div class="flex gap-2 mt-2">
+                <span class="px-2 py-1 bg-white/20 rounded-full text-xs font-medium">${currentUser.user_type === 'admin' ? '?? Admin' : currentUser.user_type === 'profesional' ? '?? Profesional' : '?? Vecino'}</span>
+                ${currentUser.barrio ? `<span class="px-2 py-1 bg-white/20 rounded-full text-xs font-medium">?? ${currentUser.barrio}</span>` : ''}
+              </div>
+            </div>
+          </div>
+          <button onclick="portalTab='mi-perfil';renderPortal()" class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition">
+            ?? Mi Perfil
+          </button>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-white border border-gray-100 rounded-xl p-4 text-center card-hover">
+          <p class="text-2xl font-bold text-portal-purple">${filtered.length}</p>
+          <p class="text-xs text-gray-500 mt-1">Publicaciones</p>
+        </div>
+        <div class="bg-white border border-gray-100 rounded-xl p-4 text-center card-hover">
+          <p class="text-2xl font-bold text-amber-400">?</p>
+          <p class="text-xs text-gray-500 mt-1">Calificación</p>
+        </div>
+        <div class="bg-white border border-gray-100 rounded-xl p-4 text-center card-hover">
+          <p class="text-2xl font-bold text-blue-600">${unreadCount}</p>
+          <p class="text-xs text-gray-500 mt-1">Mensajes</p>
+        </div>
+        <div class="bg-white border border-gray-100 rounded-xl p-4 text-center card-hover">
+          <p class="text-2xl font-bold text-english-green">${new Date().getFullYear()}</p>
+          <p class="text-xs text-gray-500 mt-1">Miembro</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS SECUNDARIOS -->
+    <div class="flex gap-2 mb-6 bg-white p-2 rounded-xl border border-gray-100">
+      <button onclick="portalTab='mi-portal-posts';renderPortal()" class="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition ${portalTab === 'mi-portal-posts' ? 'bg-portal-purple text-white' : 'text-gray-600 hover:bg-gray-50'}">
+        <i data-lucide="file-text" style="width:16px;height:16px" class="inline mr-1"></i> Publicaciones
+      </button>
+      <button onclick="portalTab='mi-portal-mensajes';renderPortal()" class="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition ${portalTab === 'mi-portal-mensajes' ? 'bg-portal-purple text-white' : 'text-gray-600 hover:bg-gray-50'} relative">
+        <i data-lucide="message-circle" style="width:16px;height:16px" class="inline mr-1"></i> Mensajes
+        ${unreadCount > 0 ? `<span class="absolute top-1 right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">${unreadCount}</span>` : ''}
+      </button>
+
+    </div>
+
+    ${portalTab === 'mi-portal-posts' ? `
+      <!-- MIS PUBLICACIONES -->
+      <button onclick="showNewPostForm()" class="w-full py-3 bg-gradient-to-r from-portal-purple to-purple-700 text-white rounded-xl font-semibold hover:shadow-lg transition flex items-center justify-center gap-2 mb-6">
+        <i data-lucide="plus" style="width:18px;height:18px"></i> Nueva Publicación
+      </button>
+      <div id="new-post-form" class="hidden mb-6"></div>
+      <div class="space-y-3">
+        ${filtered.length === 0 ? '<div class="text-center py-12 bg-gray-50 rounded-xl border border-gray-100"><p class="text-gray-400 text-sm">Aún no hay publicaciones. ¡Creá la primera!</p></div>' :
+          filtered.map(p => renderPostCard(p, 'portal-purple')).join('')}
+      </div>
+    ` : portalTab === 'mi-portal-mensajes' ? `
+      <!-- MIS MENSAJES -->
+      <div class="grid grid-cols-3 gap-4">
+        <div class="col-span-1 space-y-2 max-h-96 overflow-auto">
+          <h3 class="font-bold text-gray-800 px-4 py-2 text-sm">Conversaciones</h3>
+          <div id="conversations-list" class="space-y-1">
+            ${myMessages.length === 0 ? '<p class="text-gray-400 text-xs px-4">Sin mensajes</p>' : 
+              [...new Set(myMessages.map(m => m.message_from === currentUser.nick ? m.message_to : m.message_from))].map(contactNick => {
+                const contact = allRecords.find(r => r.type === 'user' && r.nick === contactNick);
+                const unread = myMessages.filter(m => m.message_from === contactNick && m.message_to === currentUser.nick && m.message_read !== 'true').length;
+                return `<button onclick="currentConversation='${contactNick}';renderPortalContent()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 border-l-2 ${currentConversation === contactNick ? 'border-portal-purple bg-purple-50' : 'border-transparent'} transition">
+                  <p class="text-sm font-medium text-gray-800">${contact?.nombre || contactNick}</p>
+                  ${unread > 0 ? `<span class="text-xs text-red-600 font-semibold">${unread} nuevos</span>` : '<p class="text-xs text-gray-400">Sin leer</p>'}
+                </button>`;
+              }).join('')}
+          </div>
+        </div>
+        <div class="col-span-2 bg-white border border-gray-100 rounded-xl p-4 flex flex-col">
+          ${currentConversation ? `
+            <div class="flex-1 overflow-auto mb-4 space-y-2 max-h-80">
+              ${myMessages.filter(m => (m.message_from === currentConversation && m.message_to === currentUser.nick) || (m.message_from === currentUser.nick && m.message_to === currentConversation))
+                .sort((a, b) => new Date(a.message_date || 0) - new Date(b.message_date || 0))
+                .map(m => `
+                  <div class="flex ${m.message_from === currentUser.nick ? 'justify-end' : 'justify-start'}">
+                    <div class="max-w-xs ${m.message_from === currentUser.nick ? 'bg-portal-purple text-white' : 'bg-gray-100 text-gray-800'} rounded-lg px-3 py-2">
+                      <p class="text-sm">${m.message_text}</p>
+                      <p class="text-xs ${m.message_from === currentUser.nick ? 'text-white/70' : 'text-gray-500'} mt-1">${new Date(m.message_date || 0).toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'})}</p>
+                    </div>
+                  </div>
+                `).join('')}
+            </div>
+            <form onsubmit="sendMessage(event,'${currentConversation}')" class="flex gap-2">
+              <input id="msg-input" name="msg" required placeholder="Escribí un mensaje..." class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-portal-purple">
+              <button type="submit" class="px-4 py-2 bg-portal-purple text-white rounded-lg text-sm hover:opacity-90 transition"><i data-lucide="send" style="width:16px;height:16px"></i></button>
+            </form>
+          ` : '<div class="flex items-center justify-center h-full text-gray-400"><p class="text-center"><i data-lucide="message-circle" style="width:32px;height:32px" class="mx-auto mb-2"></i><p>Seleccioná una conversación</p></p></div>'}
+        </div>
+      </div>
+    ` : `
+      <!-- MURO VECINAL -->
+      <div class="mb-6">
+        <button onclick="showWallPostForm()" class="w-full py-3 bg-gradient-to-r from-portal-purple to-purple-700 text-white rounded-xl font-semibold hover:shadow-lg transition flex items-center justify-center gap-2">
+          <i data-lucide="plus" style="width:18px;height:18px"></i> Escribir en el Muro
+        </button>
+      </div>
+      <div id="wall-post-form" class="hidden mb-6"></div>
+      <div class="space-y-3">
+        ${allRecords.filter(r => r.type === 'wall-post').sort((a, b) => new Date(b.post_date || 0) - new Date(a.post_date || 0)).map(wp => `
+          <div class="bg-white border border-gray-100 rounded-xl p-4">
+            <div class="flex items-start justify-between mb-2">
+              <div>
+                <p class="font-semibold text-gray-800">${wp.author_nick || 'Anónimo'}</p>
+                <p class="text-xs text-gray-400">${wp.author_barrio || 'Sin barrio'}</p>
+              </div>
+              <span class="text-xs text-gray-400">${wp.post_date ? new Date(wp.post_date).toLocaleDateString('es-AR') : ''}</span>
+            </div>
+            <p class="text-gray-700 text-sm mb-3">${wp.content || ''}</p>
+            <div class="flex gap-2">
+              <button onclick="likeWallPost('${wp.__backendId}')" class="text-xs px-3 py-1 rounded-full bg-gray-100 hover:bg-red-100 text-gray-600 hover:text-red-600 transition">
+                <i data-lucide="heart" style="width:14px;height:14px" class="inline mr-1"></i> ${wp.likes || 0}
+              </button>
+              <button onclick="replyToWallPost('${wp.__backendId}')" class="text-xs px-3 py-1 rounded-full bg-gray-100 hover:bg-blue-100 text-gray-600 hover:text-blue-600 transition">
+                <i data-lucide="reply" style="width:14px;height:14px" class="inline mr-1"></i> Responder
+              </button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `}
+  </div>`;
+}
+
+function showNewPostForm() {
+  const wrap = document.getElementById('new-post-form');
+  if (!wrap.classList.contains('hidden')) { wrap.classList.add('hidden'); return; }
+  renderPostFormContent(wrap, 'mi-portal');
+  lucide.createIcons();
+}
+
+function showCategoryPostForm() {
+  const wrap = document.getElementById('category-post-form');
+  wrap.classList.remove('hidden');
+  renderPostFormContent(wrap, 'category');
+  lucide.createIcons();
+}
+
+function renderPostFormContent(wrap, source) {
+  const isPro = currentUser.user_type === 'profesional';
+  const isAdmin = currentUser.user_type === 'admin';
+  const destOptions = isPro ? '<option value="global" selected>Global</option>' :
+    '<option value="global">Global</option><option value="barrio">Mi Barrio</option><option value="ambos">Ambos</option>';
+  const allCats = isPro ? CATEGORIES_GLOBAL : CATEGORIES_BARRIO;
+  const catOptions = allCats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+  wrap.innerHTML = `<div class="grid grid-cols-2 gap-3">
+    <div class="bg-gradient-to-br from-purple-50 to-white border border-purple-200 rounded-xl p-4 fade-in">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="font-bold text-sm text-portal-purple">Formulario</h3>
+        <button onclick="document.getElementById('${source === 'category' ? 'category-post-form' : 'new-post-form'}').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" style="width:16px;height:16px"></i></button>
+      </div>
+      <form onsubmit="handleNewPost(event)" class="space-y-3">
+      <!-- CATEGORÍA DESPLEGABLE -->
+      <div>
+        <label class="text-xs font-semibold text-gray-500 uppercase">Categoría *</label>
+        <select name="category" id="cat-select" required onchange="updateSubcats(this)" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1 bg-white focus:border-portal-purple">
+          <option value="">Seleccioná una categoría</option>
+          ${allCats.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('')}
+        </select>
+        <p id="cat-desc" class="text-xs text-gray-500 mt-2"></p>
+      </div>
+
+      <div><label class="text-xs font-semibold text-gray-500 uppercase">Subcategoría *</label><select name="subcategory" id="subcat-select" required class="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs bg-white mt-1"><option value="">-</option></select></div>
+
+      <!-- QUÉ COMPARTÍS -->
+      <div><label class="text-xs font-semibold text-gray-500 uppercase">Qué compartís *</label><input name="title" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1 focus:border-portal-purple" placeholder="Ej: Silla de escritorio"></div>
+
+      <!-- TIPO, PRECIO -->
+      <div class="grid grid-cols-3 gap-2">
+        <div><label class="text-xs font-semibold text-gray-500 uppercase">Tipo</label><select name="ptype" required class="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs bg-white"><option value="venta">Venta</option><option value="compra">Compra</option><option value="trueque">Trueque</option><option value="gratis">Gratis</option></select></div>
+        <div><label class="text-xs font-semibold text-gray-500 uppercase">Precio</label><select name="price-type" onchange="togglePriceInput()" class="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs bg-white"><option value="monto">Monto</option><option value="convenir">Convenir</option></select></div>
+        <div><input name="price" id="price-input" placeholder="$$$" class="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs mt-5"></div>
+      </div>
+
+      <!-- DÓNDE PUBLICAR -->
+      <div><label class="text-xs font-semibold text-gray-500 uppercase">Dónde publicar</label><select name="dest" id="dest-select" required onchange="updateDestinationInfo()" class="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs bg-white mt-1">${destOptions}</select></div>
+
+      <div id="dest-info" class="text-xs text-gray-600 bg-blue-50 border border-blue-100 rounded-lg p-2 hidden"></div>
+
+      <div id="empleadas-warning" class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 hidden flex items-start gap-2">
+        <i data-lucide="alert-circle" style="width:14px;height:14px" class="flex-shrink-0 mt-0.5"></i>
+        <span>Esta categoría solo se puede publicar en "Mi Barrio"</span>
+      </div>
+
+      <div id="carpooling-fields" class="hidden space-y-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <p class="text-xs font-semibold text-blue-700">? Campos de Carpooling</p>
+        
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-xs font-semibold text-gray-500 uppercase">Horario</label>
+            <input name="carpool-time" type="time" class="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs mt-1 bg-white">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-gray-500 uppercase">Asientos</label>
+            <select name="carpool-seats" class="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs mt-1 bg-white">
+              <option value="1">1 asiento</option>
+              <option value="2">2 asientos</option>
+              <option value="3">3 asientos</option>
+              <option value="4">4+ asientos</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold text-gray-500 uppercase">Días</label>
+          <select name="carpool-days" class="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs mt-1 bg-white">
+            <option value="lunes-viernes">Lunes a Viernes</option>
+            <option value="solo-hoy">Solo hoy</option>
+            <option value="fines-semana">Fines de semana</option>
+            <option value="todos-dias">Todos los días</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold text-gray-500 uppercase">?? Política de invitados</label>
+          <select name="carpool-guests" class="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs mt-1 bg-white">
+            <option value="solo-vecinos">Solo vecinos de mi barrio</option>
+            <option value="barrios-cercanos">Vecinos de barrios cercanos también</option>
+            <option value="todos">Abierto a todos</option>
+          </select>
+        </div>
+      </div>
+
+      <div><label class="text-xs font-semibold text-gray-500 uppercase">Descripción (opc.)</label><textarea name="desc" rows="2" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs mt-1 resize-none" placeholder="Detalles, estado, medidas..."></textarea></div>
+
+      <!-- FOTOS COMPACTO -->
+      <div>
+        <label class="text-xs font-semibold text-gray-500 uppercase">Fotos (opc.)</label>
+        <div class="grid grid-cols-3 gap-1.5 mt-1">
+          <div onclick="document.getElementById('photo-1').click()" class="aspect-square bg-gray-50 border border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:bg-purple-50 hover:border-purple-300 transition">
+            <div id="photo-1-display" class="text-center"><i data-lucide="image" style="width:16px;height:16px" class="text-gray-400 mx-auto"></i><p class="text-xs text-gray-400">+</p></div>
+            <input type="file" id="photo-1" name="photo-1" accept="image/*" class="hidden" onchange="handlePhotoUpload(this, 1)">
+          </div>
+          <div onclick="document.getElementById('photo-2').click()" class="aspect-square bg-gray-50 border border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:bg-purple-50 hover:border-purple-300 transition">
+            <div id="photo-2-display" class="text-center"><i data-lucide="image" style="width:16px;height:16px" class="text-gray-400 mx-auto"></i><p class="text-xs text-gray-400">+</p></div>
+            <input type="file" id="photo-2" name="photo-2" accept="image/*" class="hidden" onchange="handlePhotoUpload(this, 2)">
+          </div>
+          <div onclick="document.getElementById('photo-3').click()" class="aspect-square bg-gray-50 border border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:bg-purple-50 hover:border-purple-300 transition">
+            <div id="photo-3-display" class="text-center"><i data-lucide="image" style="width:16px;height:16px" class="text-gray-400 mx-auto"></i><p class="text-xs text-gray-400">+</p></div>
+            <input type="file" id="photo-3" name="photo-3" accept="image/*" class="hidden" onchange="handlePhotoUpload(this, 3)">
+          </div>
+        </div>
+      </div>
+
+      ${isAdmin ? `<div><label class="text-xs font-semibold text-gray-500 uppercase">Barrio (Admin)</label><select name="barrio-admin" required class="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs bg-white mt-1"><option value="">-</option>${BARRIOS.map(b => `<option value="${b}">${b}</option>`).join('')}</select></div>` : ''}
+
+      <button type="submit" id="post-btn" class="w-full py-2.5 bg-gradient-to-r from-portal-purple to-purple-600 text-white rounded-lg text-xs font-semibold hover:shadow-lg transition">? Publicar</button>
+    </form>
+    </div>
+    <div id="preview-panel" class="bg-white border border-gray-200 rounded-xl p-4 fade-in max-h-[600px] overflow-auto">
+      <p class="text-xs font-semibold text-gray-500 uppercase mb-3">Vista Previa</p>
+      <div id="preview-content" class="space-y-2 text-sm">
+        <p class="text-gray-400">Completa el formulario para ver la vista previa</p>
+      </div>
+    </div>
+  </div>`;
+
+  // Attach event listeners to form inputs for real-time preview
+  setTimeout(() => {
+    const form = wrap.querySelector('form');
+    const inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+      input.addEventListener('change', updatePreview);
+      input.addEventListener('input', updatePreview);
+    });
+    // Handle photo uploads
+    for (let i = 1; i <= 3; i++) {
+      const photoInput = form.querySelector(`input[name="photo-${i}"]`);
+      if (photoInput) {
+        photoInput.addEventListener('change', updatePreview);
+      }
+    }
+    // Trigger updateSubcats for category if we're in category context
+    if (source === 'category' && selectedCategory) {
+      const catRadio = form.querySelector(`input[value="${selectedCategory}"]`);
+      if (catRadio) updateSubcats(catRadio);
+    }
+  }, 0);
+}
+
+function updatePreview() {
+  const wrap = document.getElementById('new-post-form');
+  if (!wrap) return;
+  const form = wrap.querySelector('form');
+  if (!form) return;
+  
+  const fd = new FormData(form);
+  const title = fd.get('title') || '(Sin título)';
+  const ptype = fd.get('ptype') || 'venta';
+  const price = fd.get('price') || '';
+  const priceType = fd.get('price-type') || 'monto';
+  const category = fd.get('category') || '';
+  const subcategory = fd.get('subcategory') || '';
+  const desc = fd.get('desc') || '';
+  
+  const catName = CATEGORIES_BARRIO.find(c => c.id === category)?.name || category;
+  const priceDisplay = priceType === 'convenir' ? 'Precio a convenir' : (price || '(Sin especificar)');
+  
+  const typeBadgeMap = { venta:'bg-green-100 text-green-700', compra:'bg-blue-100 text-blue-700', trueque:'bg-amber-100 text-amber-700', gratis:'bg-purple-100 text-purple-700' };
+  const typeBadge = typeBadgeMap[ptype] || 'bg-gray-100 text-gray-600';
+  
+  // Get photos
+  let photosHtml = '';
+  for (let i = 1; i <= 3; i++) {
+    const photoInput = form.querySelector(`input[name="photo-${i}"]`);
+    if (photoInput && photoInput.dataset.base64) {
+      photosHtml += `<div class="w-full h-24 rounded-lg bg-cover bg-center" style="background-image: url('${photoInput.dataset.base64}')"></div>`;
+    }
+  }
+  
+  const preview = `
+    <div class="space-y-3">
+      ${photosHtml ? `<div class="space-y-2">${photosHtml}</div>` : '<div class="w-full h-24 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs">Sin fotos</div>'}
+      <div>
+        <h4 class="font-semibold text-gray-800">${title}</h4>
+        <p class="text-xs text-gray-400">${catName} ${subcategory ? '· ' + subcategory : ''}</p>
+      </div>
+      <div class="flex items-center justify-between">
+        <p class="font-bold text-portal-purple">${priceDisplay}</p>
+        <span class="text-xs px-2 py-0.5 rounded-full ${typeBadge}">${ptype}</span>
+      </div>
+      ${desc ? `<p class="text-xs text-gray-600 leading-relaxed">${desc}</p>` : '<p class="text-xs text-gray-400">Sin descripción</p>'}
+      <div class="pt-2 border-t border-gray-100 text-xs text-gray-500">
+        <p>?? ${currentUser.barrio || 'Sin barrio'}</p>
+        <p>?? ${currentUser.nick}</p>
+      </div>
+    </div>
+  `;
+  
+  const previewPanel = document.getElementById('preview-content');
+  if (previewPanel) previewPanel.innerHTML = preview;
+}
+
+function updateSubcats(sel) {
+  const cat = CATEGORIES_BARRIO.find(c => c.id === sel.value);
+  const subSel = document.getElementById('subcat-select');
+  subSel.innerHTML = '<option value="">-</option>' + (cat ? cat.subs.map(s => `<option value="${s}">${s}</option>`).join('') : '');
+  
+  // Mostrar descripción de la categoría
+  const catDesc = document.getElementById('cat-desc');
+  if (catDesc && cat) {
+    catDesc.textContent = cat.subs.join(' • ');
+  }
+  
+  // Show/hide carpooling fields
+  const carpoolingFields = document.getElementById('carpooling-fields');
+  if (sel.value === 'carpooling') {
+    carpoolingFields.classList.remove('hidden');
+  } else {
+    carpoolingFields.classList.add('hidden');
+  }
+
+  // Handle "Empleadas no recomendadas" - force "Mi Barrio" and disable type/price
+  const destSelect = document.querySelector('select[name="dest"]');
+  const empleadosWarning = document.getElementById('empleadas-warning');
+  const ptypeSelect = document.querySelector('select[name="ptype"]');
+  const priceTypeSelect = document.querySelector('select[name="price-type"]');
+  const priceInput = document.getElementById('price-input');
+  
+  if (sel.value === 'alerta-empleadas') {
+    destSelect.value = 'barrio';
+    destSelect.disabled = true;
+    empleadosWarning.classList.remove('hidden');
+    
+    // Disable and gray out type and price fields
+    ptypeSelect.disabled = true;
+    priceTypeSelect.disabled = true;
+    priceInput.disabled = true;
+    ptypeSelect.style.opacity = '0.5';
+    priceTypeSelect.style.opacity = '0.5';
+    priceInput.style.opacity = '0.5';
+  } else {
+    destSelect.disabled = false;
+    empleadosWarning.classList.add('hidden');
+    
+    // Re-enable type and price fields
+    ptypeSelect.disabled = false;
+    priceTypeSelect.disabled = false;
+    priceInput.disabled = false;
+    ptypeSelect.style.opacity = '1';
+    priceTypeSelect.style.opacity = '1';
+    priceInput.style.opacity = '1';
+  }
+}
+
+function updateDestinationInfo() {
+  const destSelect = document.querySelector('select[name="dest"]');
+  const destInfo = document.getElementById('dest-info');
+  if (!destInfo) return;
+  
+  const destination = destSelect.value;
+  const isPro = currentUser.user_type === 'profesional';
+  
+  let message = '';
+  if (destination === 'global') {
+    message = '?? <strong>Global:</strong> Tu publicación se verá en todo Pilar (Marketplace Global)';
+  } else if (destination === 'barrio') {
+    message = `??? <strong>Mi Barrio:</strong> Solo vecinos de ${currentUser.barrio || 'tu barrio'} verán tu publicación`;
+  } else if (destination === 'ambos') {
+    message = `?? <strong>Ambos:</strong> Se verá en Global Y en ${currentUser.barrio || 'tu barrio'}`;
+  }
+  
+  if (message) {
+    destInfo.innerHTML = message;
+    destInfo.classList.remove('hidden');
+  }
+}
+
+function togglePriceInput() {
+  const priceType = document.querySelector('select[name="price-type"]').value;
+  const priceInput = document.getElementById('price-input');
+  priceInput.disabled = priceType === 'convenir';
+  priceInput.value = '';
+}
+
+function handlePhotoUpload(input, photoNumber) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const displayEl = document.getElementById(`photo-${photoNumber}-display`);
+    displayEl.innerHTML = `
+      <div class="w-full h-full relative rounded-lg overflow-hidden" style="background-image: url('${e.target.result}'); background-size: cover; background-position: center;">
+        <button type="button" onclick="clearPhoto(${photoNumber})" class="absolute top-0.5 right-0.5 bg-black/60 hover:bg-black/80 text-white px-1.5 py-0.5 rounded text-xs">?</button>
+      </div>
+    `;
+    document.querySelector(`input[name="photo-${photoNumber}"]`).dataset.base64 = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearPhoto(photoNumber) {
+  document.getElementById(`photo-${photoNumber}`).value = '';
+  document.getElementById(`preview-${photoNumber}`).innerHTML = '';
+  document.querySelector(`input[name="photo-${photoNumber}"]`).dataset.base64 = '';
+}
+
+async function handleNewPost(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const btn = document.getElementById('post-btn');
+  btn.disabled = true; btn.textContent = 'Publicando...';
+
+  const isAdmin = currentUser.user_type === 'admin';
+  const postCount = allRecords.filter(r => r.type === 'post').length;
+  if (!isAdmin && postCount >= 950) { showToast('Límite de publicaciones alcanzado'); btn.disabled = false; btn.textContent = 'Publicar'; return; }
+
+  const priceType = fd.get('price-type');
+  const priceValue = priceType === 'convenir' ? 'Precio a convenir' : (fd.get('price') || '');
+  const postBarrio = isAdmin ? fd.get('barrio-admin') : currentUser.barrio;
+
+  // Collect photos
+  const photo1 = document.querySelector('input[name="photo-1"]').dataset.base64 || '';
+  const photo2 = document.querySelector('input[name="photo-2"]').dataset.base64 || '';
+  const photo3 = document.querySelector('input[name="photo-3"]').dataset.base64 || '';
+
+  const record = {
+    type: 'post',
+    nick:'', nombre:'', apellido:'', dni:'', mail:'', barrio:'', uf_lote:'', password:'', rubro:'',user_type:'',
+    post_title: fd.get('title'),
+    post_description: fd.get('desc') || '',
+    post_price: priceValue,
+    post_type: fd.get('ptype'),
+    post_destination: fd.get('dest'),
+    post_category: fd.get('category'),
+    post_subcategory: fd.get('subcategory') || '',
+    post_author_nick: currentUser.nick,
+    post_author_barrio: postBarrio,
+    post_rating: 0,
+    post_comments: '',
+    post_date: new Date().toISOString(),
+    post_user_type: currentUser.user_type,
+    post_photo_1: photo1,
+    post_photo_2: photo2,
+    post_photo_3: photo3,
+    carpool_time: fd.get('carpool-time') || '',
+    carpool_seats: fd.get('carpool-seats') || '',
+    carpool_days: fd.get('carpool-days') || '',
+    carpool_guests: fd.get('carpool-guests') || ''
+  };
+
+  const res = await window.dataSdk.create(record);
+  btn.disabled = false; btn.textContent = '? Publicar Ahora';
+  if (res.isOk) {
+    showToast('¡Publicado!');
+    document.getElementById('new-post-form').classList.add('hidden');
+  } else { showToast('Error al publicar'); }
+}
+
+function renderPostCard(p, color) {
+  const typeBadge = { venta:'bg-green-100 text-green-700', compra:'bg-blue-100 text-blue-700', trueque:'bg-amber-100 text-amber-700', gratis:'bg-purple-100 text-purple-700' };
+  const badge = typeBadge[p.post_type] || 'bg-gray-100 text-gray-600';
+  const stars = p.post_rating || 0;
+  const starHtml = Array.from({length:5}, (_,i) => `<span class="${i < stars ? 'text-amber-400' : 'text-gray-300'}">?</span>`).join('');
+  const catName = CATEGORIES_BARRIO.find(c => c.id === p.post_category)?.name || p.post_category;
+  const isAdmin = currentUser.user_type === 'admin';
+
+  return `<div class="bg-white border border-gray-100 rounded-xl p-4 card-hover cursor-pointer" onclick="selectedPost=allRecords.find(r=>r.__backendId==='${p.__backendId}');renderPortalContent()">
+    <div class="flex justify-between items-start mb-2">
+      <div>
+        <h4 class="font-semibold text-gray-800">${p.post_title}</h4>
+        <p class="text-xs text-gray-400">${catName} ${p.post_subcategory ? '· '+p.post_subcategory : ''} · ${p.post_author_nick} ${p.post_author_barrio ? '· '+p.post_author_barrio : ''}</p>
+      </div>
+      <span class="text-xs px-2 py-0.5 rounded-full ${badge} font-medium">${p.post_type}</span>
+    </div>
+    ${p.post_price ? `<p class="text-${color} font-bold text-sm mb-1">${p.post_price}</p>` : ''}
+    <div class="flex items-center justify-between">
+      <div class="text-sm">${starHtml}</div>
+      ${isAdmin ? `<button onclick="event.stopPropagation();deletePost('${p.__backendId}')" class="text-red-400 hover:text-red-600 text-xs">Eliminar</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderPostDetail(p) {
+  if (!p) return '';
+  const catName = CATEGORIES_BARRIO.find(c => c.id === p.post_category)?.name || p.post_category;
+  const stars = p.post_rating || 0;
+  const comments = p.post_comments ? p.post_comments.split('|||').filter(Boolean) : [];
+  const isOwner = currentUser.nick === p.post_author_nick;
+  const isAdmin = currentUser.user_type === 'admin';
+  const isCarpooling = p.post_category === 'carpooling';
+
+  // Format carpool info
+  let carpoolInfo = '';
+  if (isCarpooling && p.carpool_time) {
+    const daysMap = {'lunes-viernes':'Lunes a Viernes','solo-hoy':'Solo hoy','fines-semana':'Fines de semana','todos-dias':'Todos los días'};
+    const guestsMap = {'solo-vecinos':'Solo vecinos de mi barrio','barrios-cercanos':'Vecinos de barrios cercanos','todos':'Abierto a todos'};
+    carpoolInfo = `
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2 mb-3">
+        <p class="text-xs font-semibold text-blue-700 flex items-center gap-1">? Detalles del viaje</p>
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <div class="flex items-center gap-1"><i data-lucide="clock" style="width:16px;height:16px" class="text-blue-600"></i> <span>${p.carpool_time}</span></div>
+          <div class="flex items-center gap-1"><i data-lucide="users" style="width:16px;height:16px" class="text-blue-600"></i> <span>${p.carpool_seats} asientos</span></div>
+          <div class="flex items-center gap-1"><i data-lucide="calendar" style="width:16px;height:16px" class="text-blue-600"></i> <span>${daysMap[p.carpool_days] || p.carpool_days}</span></div>
+          <div class="flex items-center gap-1"><i data-lucide="lock" style="width:16px;height:16px" class="text-green-600"></i> <span class="text-xs">${guestsMap[p.carpool_guests] || p.carpool_guests}</span></div>
+        </div>
+      </div>
+    `;
+  }
+
+  return `<div class="p-4 max-w-2xl mx-auto w-full fade-in">
+    <button onclick="selectedPost=null;renderPortalContent()" class="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-4">
+      <i data-lucide="arrow-left" style="width:16px;height:16px"></i> Volver
+    </button>
+    <div class="bg-white border border-gray-100 rounded-2xl p-6">
+      <div class="flex justify-between items-start mb-3">
+        <h2 class="text-xl font-bold text-gray-800" style="font-family:'Playfair Display',serif">${p.post_title}</h2>
+        <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 font-medium">${p.post_type}</span>
+      </div>
+      <p class="text-sm text-gray-400 mb-3">${catName} ${p.post_subcategory?'· '+p.post_subcategory:''} · Por ${p.post_author_nick} ${p.post_author_barrio?'('+p.post_author_barrio+')':''}</p>
+      ${p.post_price ? `<p class="text-lg font-bold text-english-green mb-3">${p.post_price}</p>` : ''}
+      ${carpoolInfo}
+      ${p.post_description ? `<p class="text-gray-600 text-sm mb-4 leading-relaxed">${p.post_description}</p>` : ''}
+
+      <div class="mb-4">
+        <p class="text-xs font-medium text-gray-500 mb-1">Calificación</p>
+        <div class="flex gap-1">
+          ${Array.from({length:5}, (_,i) => `<button onclick="ratePost('${p.__backendId}',${i+1})" class="star-btn text-2xl ${i < stars ? 'text-amber-400' : 'text-gray-300'}">?</button>`).join('')}
+        </div>
+        <p class="text-xs text-gray-400 mt-1">Haz clic en las estrellas para calificar esta publicación</p>
+      </div>
+
+      <div>
+        <p class="text-xs font-medium text-gray-500 mb-2">Comentarios (${comments.length})</p>
+        <div class="space-y-2 mb-3 max-h-48 overflow-auto">
+          ${comments.map((c, idx) => `<div class="bg-gray-50 rounded-lg p-2 text-sm text-gray-600 flex justify-between items-start gap-2">
+            <span>${c}</span>
+            ${isAdmin ? `<button onclick="deleteComment('${p.__backendId}',${idx})" class="text-red-400 hover:text-red-600 flex-shrink-0"><i data-lucide="x" style="width:14px;height:14px"></i></button>` : ''}
+          </div>`).join('')}
+          ${comments.length === 0 ? '<p class="text-gray-300 text-sm">Sin comentarios</p>' : ''}
+        </div>
+        <form onsubmit="addComment(event,'${p.__backendId}')" class="flex gap-2">
+          <input name="comment" required placeholder="Escribí un comentario..." class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm">
+          <button type="submit" class="px-4 py-2 bg-english-green text-white rounded-lg text-sm hover:opacity-90">Enviar</button>
+        </form>
+      </div>
+
+      ${(isOwner || isAdmin) ? `<button onclick="deletePost('${p.__backendId}')" class="mt-4 text-red-400 hover:text-red-600 text-sm flex items-center gap-1"><i data-lucide="trash-2" style="width:14px;height:14px"></i> Eliminar publicación</button>` : ''}
+    </div>
+  </div>`;
+}
+
+async function ratePost(id, rating) {
+  const post = allRecords.find(r => r.__backendId === id);
+  if (!post) return;
+  const updated = {...post, post_rating: rating};
+  await window.dataSdk.update(updated);
+}
+
+async function addComment(e, id) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const post = allRecords.find(r => r.__backendId === id);
+  if (!post) return;
+  const newComment = currentUser.nick + ': ' + fd.get('comment');
+  const comments = post.post_comments ? post.post_comments + '|||' + newComment : newComment;
+  await window.dataSdk.update({...post, post_comments: comments});
+  e.target.reset();
+}
+
+async function deleteComment(postId, commentIdx) {
+  const post = allRecords.find(r => r.__backendId === postId);
+  if (!post) return;
+  const comments = post.post_comments ? post.post_comments.split('|||').filter(Boolean) : [];
+  comments.splice(commentIdx, 1);
+  const updated = {...post, post_comments: comments.join('|||')};
+  await window.dataSdk.update(updated);
+}
+
+async function deletePost(id) {
+  const post = allRecords.find(r => r.__backendId === id);
+  if (!post) return;
+  await window.dataSdk.delete(post);
+  selectedPost = null;
+  showToast('Publicación eliminada');
+}
+
+async function sendMessage(e, recipient) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const text = fd.get('msg');
+  
+  const record = {
+    type: 'message',
+    nick: '', nombre: '', apellido: '', dni: '', mail: '', barrio: '', uf_lote: '', password: '', rubro: '', user_type: '',
+    message_from: currentUser.nick,
+    message_to: recipient,
+    message_text: text,
+    message_date: new Date().toISOString(),
+    message_read: 'false',
+    post_title: '', post_description: '', post_price: '', post_type: '', post_destination: '', post_category: '', post_subcategory: '', post_author_nick: '', post_author_barrio: '', post_rating: 0, post_comments: '', post_date: '', post_user_type: ''
+  };
+  
+  const res = await window.dataSdk.create(record);
+  if (res.isOk) {
+    e.target.reset();
+    renderPortalContent();
+  } else {
+    showToast('Error al enviar mensaje');
+  }
+}
+
+function showWallPostForm() {}
+
+async function likeWallPost(id) {}
+
+function renderMarketplace() {
+  setTimeout(() => {
+    const scopeEl = document.getElementById('scope-indicator');
+    if (scopeEl) scopeEl.textContent = '?? Marketplace Global - Toda la zona de Pilar';
+  }, 0);
+
+  if (selectedPost) return renderPostDetail(selectedPost);
+  if (selectedCategory) return renderCategoryView('global');
+
+  const posts = allRecords.filter(r => r.type === 'post' && (r.post_destination === 'global' || r.post_destination === 'ambos'));
+  const filtered = searchQuery ? posts.filter(p => (p.post_title||'').toLowerCase().includes(searchQuery.toLowerCase())) : null;
+
+  return `<div class="p-4 max-w-2xl mx-auto w-full fade-in">
+    <h2 class="text-xl font-bold text-english-green mb-1" style="font-family:'Playfair Display',serif">Marketplace Global</h2>
+    <p class="text-gray-400 text-sm mb-5">Toda la zona de Pilar</p>
+    ${filtered ? `<div class="space-y-3 mb-6">${filtered.length ? filtered.map(p=>renderPostCard(p,'english-green')).join('') : '<p class="text-gray-400 text-sm text-center py-4">Sin resultados</p>'}</div>` : ''}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      ${CATEGORIES_GLOBAL.map(c => {
+        const count = posts.filter(p => p.post_category === c.id).length;
+        return `<button onclick="selectedCategory='${c.id}';renderPortalContent()" class="bg-white border border-gray-100 rounded-xl p-4 text-left card-hover hover:border-english-green/30 hover:shadow-md transition">
+          <div class="flex items-start gap-3">
+            <i data-lucide="${c.icon}" style="width:20px;height:20px" class="text-english-green flex-shrink-0 mt-0.5"></i>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm text-gray-800">${c.name}</p>
+              <p class="text-xs text-gray-500 mt-1 line-clamp-2">${c.subs.join(', ')}</p>
+              <p class="text-xs text-gray-400 mt-2 font-medium">${count} ${count === 1 ? 'publicación' : 'publicaciones'}</p>
+            </div>
+          </div>
+        </button>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function renderMiBarrio() {
+  setTimeout(() => {
+    const scopeEl = document.getElementById('scope-indicator');
+    if (scopeEl) scopeEl.textContent = `??? ${currentUser.barrio || 'Mi Barrio'} - Publicaciones de tu comunidad`;
+  }, 0);
+
+  if (selectedPost) return renderPostDetail(selectedPost);
+  if (selectedCategory) return renderCategoryView('barrio');
+
+  const posts = allRecords.filter(r => r.type === 'post' && (r.post_destination === 'barrio' || r.post_destination === 'ambos') && r.post_author_barrio === currentUser.barrio);
+  const filtered = searchQuery ? posts.filter(p => (p.post_title||'').toLowerCase().includes(searchQuery.toLowerCase())) : null;
+
+  return `<div class="p-4 max-w-2xl mx-auto w-full fade-in">
+    <h2 class="text-xl font-bold text-ocean-blue mb-1" style="font-family:'Playfair Display',serif">${currentUser.barrio || 'Mi Barrio'}</h2>
+    <p class="text-gray-400 text-sm mb-5">Publicaciones de tu comunidad</p>
+    ${filtered ? `<div class="space-y-3 mb-6">${filtered.length ? filtered.map(p=>renderPostCard(p,'ocean-blue')).join('') : '<p class="text-gray-400 text-sm text-center py-4">Sin resultados</p>'}</div>` : ''}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      ${CATEGORIES_BARRIO.map(c => {
+        const count = posts.filter(p => p.post_category === c.id).length;
+        return `<button onclick="selectedCategory='${c.id}';renderPortalContent()" class="bg-white border border-gray-100 rounded-xl p-4 text-left card-hover hover:border-ocean-blue/30 hover:shadow-md transition">
+          <div class="flex items-start gap-3">
+            <i data-lucide="${c.icon}" style="width:20px;height:20px" class="text-ocean-blue flex-shrink-0 mt-0.5"></i>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm text-gray-800">${c.name}</p>
+              <p class="text-xs text-gray-500 mt-1 line-clamp-2">${c.subs.join(', ')}</p>
+              <p class="text-xs text-gray-400 mt-2 font-medium">${count} ${count === 1 ? 'publicación' : 'publicaciones'}</p>
+            </div>
+          </div>
+        </button>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function renderTodosBarrios() {
+  setTimeout(() => {
+    const scopeEl = document.getElementById('scope-indicator');
+    if (scopeEl) scopeEl.textContent = `??? Mapa Comunitario - Todas las publicaciones por barrio`;
+  }, 0);
+
+  if (selectedPost) return renderPostDetail(selectedPost);
+
+  const allPosts = allRecords.filter(r => r.type === 'post');
+  
+  // Group posts by barrio
+  const postsByBarrio = {};
+  BARRIOS.forEach(b => { postsByBarrio[b] = []; });
+  allPosts.forEach(p => {
+    if (p.post_author_barrio && postsByBarrio[p.post_author_barrio]) {
+      postsByBarrio[p.post_author_barrio].push(p);
+    }
+  });
+
+  // Filter by search
+  let filtered = postsByBarrio;
+  if (searchQuery) {
+    filtered = {};
+    Object.keys(postsByBarrio).forEach(barrio => {
+      filtered[barrio] = postsByBarrio[barrio].filter(p => (p.post_title||'').toLowerCase().includes(searchQuery.toLowerCase()));
+    });
+  }
+
+  return `<div class="p-4 max-w-6xl mx-auto w-full fade-in">
+    <h2 class="text-xl font-bold text-admin-orange mb-1" style="font-family:'Playfair Display',serif">Mapa Comunitario</h2>
+    <p class="text-gray-400 text-sm mb-6">Todas las publicaciones organizadas por barrio</p>
+    <div class="space-y-6">
+      ${BARRIOS.map(barrio => {
+        const posts = filtered[barrio] || [];
+        const count = posts.length;
+        if (count === 0) return '';
+        return `
+          <div class="bg-white border border-gray-100 rounded-xl p-4">
+            <h3 class="font-bold text-admin-orange text-lg mb-4 flex items-center gap-2">
+              <i data-lucide="map-pin" style="width:18px;height:18px"></i>
+              ${barrio}
+              <span class="text-xs bg-orange-100 text-admin-orange rounded-full px-2 py-0.5">${count}</span>
+            </h3>
+            <div class="space-y-2">
+              ${posts.map(p => renderPostCard(p, 'admin-orange')).join('')}
+            </div>
+          </div>
+        `;
+      }).join('')}
+      ${Object.values(filtered).flat().length === 0 ? '<div class="text-center py-12 bg-gray-50 rounded-xl border border-gray-100"><p class="text-gray-400 text-sm">Sin publicaciones</p></div>' : ''}
+    </div>
+  </div>`;
+}
+
+function renderCategoryView(scope) {
+  const actualCat = CATEGORIES_BARRIO.find(c => c.id === selectedCategory);
+  if (!actualCat) return '';
+  const color = scope === 'mapa' ? 'admin-orange' : scope === 'barrio' ? 'ocean-blue' : 'english-green';
+  let posts;
+  if (scope === 'mapa') {
+    posts = allRecords.filter(r => r.type === 'post' && r.post_category === selectedCategory);
+  } else if (scope === 'barrio') {
+    posts = allRecords.filter(r => r.type === 'post' && r.post_category === selectedCategory && (r.post_destination === 'barrio' || r.post_destination === 'ambos') && r.post_author_barrio === currentUser.barrio);
+  } else {
+    posts = allRecords.filter(r => r.type === 'post' && r.post_category === selectedCategory && (r.post_destination === 'global' || r.post_destination === 'ambos'));
+  }
+  const filtered = searchQuery ? posts.filter(p => (p.post_title||'').toLowerCase().includes(searchQuery.toLowerCase())) : posts;
+
+  // Preselect category for the post form
+  setTimeout(() => {
+    const catSelect = document.querySelector('input[name="category"]');
+    if (catSelect) catSelect.value = selectedCategory;
+    updateSubcats({value: selectedCategory});
+  }, 0);
+
+  // Special handling for "Empleadas no recomendadas" category
+  if (selectedCategory === 'alerta-empleadas') {
+    return `<div class="p-4 max-w-4xl mx-auto w-full fade-in">
+      <button onclick="selectedCategory=null;renderPortalContent()" class="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-4">
+        <i data-lucide="arrow-left" style="width:16px;height:16px"></i> Volver a categorías
+      </button>
+      <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+        <h2 class="text-xl font-bold text-red-700 mb-2 flex items-center gap-2" style="font-family:'Playfair Display',serif">
+          <i data-lucide="alert-triangle" style="width:24px;height:24px"></i>
+          ${actualCat.name}
+        </h2>
+        <p class="text-sm text-red-600">Reportes y advertencias de la comunidad. Comparte información de manera responsable y verificada.</p>
+        <button onclick="showCategoryPostForm()" class="mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-2">
+          <i data-lucide="plus" style="width:16px;height:16px"></i> Reportar en esta categoría
+        </button>
+      </div>
+
+      <div id="category-post-form" class="hidden mb-6 bg-red-50 border border-red-200 rounded-xl p-4"></div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-8">
+        ${actualCat.subs.map(sub => {
+          const subCount = filtered.filter(p => p.post_subcategory === sub).length;
+          return `<div class="bg-white border border-gray-100 rounded-lg p-3 text-center card-hover cursor-pointer hover:border-red-200">
+            <p class="font-medium text-sm text-gray-800">${sub}</p>
+            <p class="text-xs text-gray-400 mt-1">${subCount}</p>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <div class="space-y-3">
+        ${filtered.length ? filtered.map(p => {
+          const date = p.post_date ? new Date(p.post_date).toLocaleDateString('es-AR') : 'Sin fecha';
+          return `<div class="bg-white border-2 border-red-200 rounded-xl p-4 card-hover cursor-pointer hover:shadow-md" onclick="selectedPost=allRecords.find(r=>r.__backendId==='${p.__backendId}');renderPortalContent()">
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <h4 class="font-semibold text-gray-800">${p.post_title}</h4>
+                <p class="text-xs text-gray-400">${p.post_subcategory} · Por ${p.post_author_nick}</p>
+              </div>
+              <span class="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 font-medium">?? Reporte</span>
+            </div>
+            <p class="text-sm text-gray-600 mb-2 line-clamp-2">${p.post_description || 'Sin descripción'}</p>
+            <div class="flex justify-between items-center text-xs text-gray-400">
+              <span>${date}</span>
+              <span>${p.post_author_barrio || 'Sin barrio'}</span>
+            </div>
+          </div>`;
+        }).join('') : '<div class="text-center py-12 bg-green-50 rounded-xl border border-green-200"><i data-lucide="check-circle" style="width:32px;height:32px" class="text-green-600 mx-auto mb-2"></i><p class="text-green-700 font-medium">¡Excelente! Sin reportes en esta categoría</p></div>'}
+      </div>
+    </div>`;
+  }
+
+  return `<div class="p-4 max-w-4xl mx-auto w-full fade-in">
+    <button onclick="selectedCategory=null;renderPortalContent()" class="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-4">
+      <i data-lucide="arrow-left" style="width:16px;height:16px"></i> Volver a categorías
+    </button>
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-bold text-${color}" style="font-family:'Playfair Display',serif">${actualCat.name}</h2>
+      <button onclick="showCategoryPostForm()" class="px-4 py-2 bg-${color} hover:opacity-90 text-white rounded-lg text-sm font-medium transition flex items-center gap-2">
+        <i data-lucide="plus" style="width:16px;height:16px"></i> Publicar aquí
+      </button>
+    </div>
+
+    <div id="category-post-form" class="hidden mb-6 bg-gray-50 border border-gray-200 rounded-xl p-4"></div>
+    
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-8">
+      ${actualCat.subs.map(sub => {
+        const subCount = filtered.filter(p => p.post_subcategory === sub).length;
+        return `<div class="bg-white border border-gray-100 rounded-lg p-3 text-center card-hover cursor-pointer hover:border-${color}/30">
+          <p class="font-medium text-sm text-gray-800">${sub}</p>
+          <p class="text-xs text-gray-400 mt-1">${subCount}</p>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div class="space-y-3">
+      ${filtered.length ? filtered.map(p => renderPostCard(p, color)).join('') : '<p class="text-gray-400 text-sm text-center py-8">No hay publicaciones en esta categoría</p>'}
+    </div>
+  </div>`;
+}
+
+const dataHandler = {
+  onDataChanged(data) {
+    allRecords = data;
+    if (currentUser && currentUser.__backendId && currentUser.__backendId !== 'admin') {
+      const updated = data.find(r => r.__backendId === currentUser.__backendId);
+      if (updated) currentUser = updated;
+    }
+    if (currentScreen === 'portal') renderPortalContent();
+  }
+};
+
+const defaultConfig = {
+  main_title: "Soltá lo que no usás, encontrá lo que necesitás.",
+  subtitle_text: "Marketplace de Pilar · Tu comunidad vecinal para intercambiar, comprar y compartir entre vecinos.",
+  cta_text: "Unirme a Vecinity",
+  background_color: "#ffffff",
+  surface_color: "#f9fafb",
+  text_color: "#1f2937",
+  primary_color: "#1B4332",
+  secondary_color: "#1B4965",
+  font_family: "DM Sans",
+  font_size: 14
+};
+
+if (window.elementSdk) {
+  window.elementSdk.init({
+    defaultConfig,
+    onConfigChange: async (config) => {
+      const bg = config.background_color || defaultConfig.background_color;
+      const text = config.text_color || defaultConfig.text_color;
+      const font = config.font_family || defaultConfig.font_family;
+      const baseSize = config.font_size || defaultConfig.font_size;
+
+      document.body.style.backgroundColor = bg;
+      document.body.style.color = text;
+      document.body.style.fontFamily = `${font}, DM Sans, sans-serif`;
+      document.body.style.fontSize = `${baseSize}px`;
+
+      const navbar = document.getElementById('navbar');
+      if (navbar) navbar.style.backgroundColor = bg;
+
+      if (currentScreen === 'landing') renderLanding();
+    },
+    mapToCapabilities: (config) => ({
+      recolorables: [
+        { get: () => config.background_color || defaultConfig.background_color, set: (v) => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
+        { get: () => config.surface_color || defaultConfig.surface_color, set: (v) => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
+        { get: () => config.text_color || defaultConfig.text_color, set: (v) => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+        { get: () => config.primary_color || defaultConfig.primary_color, set: (v) => { config.primary_color = v; window.elementSdk.setConfig({ primary_color: v }); } },
+        { get: () => config.secondary_color || defaultConfig.secondary_color, set: (v) => { config.secondary_color = v; window.elementSdk.setConfig({ secondary_color: v }); } },
+      ],
+      borderables: [],
+      fontEditable: { get: () => config.font_family || defaultConfig.font_family, set: (v) => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); } },
+      fontSizeable: { get: () => config.font_size || defaultConfig.font_size, set: (v) => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); } },
+    }),
+    mapToEditPanelValues: (config) => new Map([
+      ["main_title", config.main_title || defaultConfig.main_title],
+      ["subtitle_text", config.subtitle_text || defaultConfig.subtitle_text],
+      ["cta_text", config.cta_text || defaultConfig.cta_text],
+    ])
+  });
+}
+
+async function initApp() {
+  try {
+    if (window.dataSdk) {
+      const res = await window.dataSdk.init(dataHandler);
+      if (!res.isOk) {
+        console.error('Data SDK init failed:', res.error);
+      }
+    }
+  } catch (e) {
+    console.error('Error initializing Data SDK:', e);
+  }
+
+  showScreen('landing');
+  renderLanding();
+  lucide.createIcons();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9e4edd1385251a73',t:'MTc3NDk1NDk2NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
