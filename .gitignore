@@ -1,0 +1,18 @@
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Configuración de editores (VS Code, Cursor, etc.)
+.vscode/
+.idea/
+*.swp
+*.log
+
+# Carpetas temporales y de dependencias
+node_modules/
+dist/
+tmp/
+out/
+
+# Archivos de configuración local
+.env
